@@ -1,4 +1,3 @@
-
 name: Elixir CI
 
 # Define workflow that runs when changes are pushed to the
