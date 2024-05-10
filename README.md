@@ -1,5 +1,7 @@
 # Efx
 
+![Tests](https://github.com/smoes/validixir/actions/workflows/main.yaml/badge.svg)
+
 **TODO: Add description**
 
 ## Installation
