@@ -1,0 +1,4 @@
+%{
+  "process_tree": {:hex, :process_tree, "0.1.2", "26218b086f5a2265a5c7a24050acd8b7416702633518f423ddde3cf38c6ff3cf", [:mix], [], "hexpm", "e5d0876a23cc7f0062f14f43c3a07de71e063d876bb256ab32055c9131f8f9aa"},
+  "typed_struct": {:hex, :typed_struct, "0.3.0", "939789e3c1dca39d7170c87f729127469d1315dcf99fee8e152bb774b17e7ff7", [:mix], [], "hexpm", "c50bd5c3a61fe4e198a8504f939be3d3c85903b382bde4865579bc23111d1b6d"},
+}
