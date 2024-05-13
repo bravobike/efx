@@ -14,7 +14,7 @@ defmodule Efx do
   mockable behaviour, e.g.
 
       defmodule MyEffect do
-        use Common.Effects
+        use Efx
 
         @spec read_numbers(String.t()) :: integer()
         defeffect read_numbers(id) do
