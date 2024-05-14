@@ -14,11 +14,11 @@ that contains side effects testable. It offers a convenient and declarative synt
 Efx follows the following principles:
 
 - Modules contain groups of effects that can all be rebound or neither in tests
-- Mocking effects should be as simple as possible without going into technical detail.
+- Rebinding effects should be as simple and declarative as possible.
 - We want to run as much tests async as possible. Thus, we traverse 
   the supervision tree to find rebound effects in the ancest test processes,
   in an isolated manner.
-- Effects are not mocked by default in tests, thus, must be explicitly mocked.
+- Effects are not mocked by default in tests, thus, must be explicitly rebound.
 - Effects can only be rebound in tests, but not in production.
 - We want zero performance overhead in production.
 
@@ -32,19 +32,21 @@ Efx follows the following principles:
 To define effects we insert the use-Macro provided by the `Efx`-Module as follows:
 
 
-    defmodule MyEffect do
-      use Efx
+```elixir
+defmodule MyEffect do
+  use Efx
 
-      @spec read_numbers(String.t()) :: integer()
-      defeffect read_numbers(id) do
-        ... 
-      end
+  @spec read_numbers(String.t()) :: integer()
+  defeffect read_numbers(id) do
+    ... 
+  end
 
-      @spec write_numbers(String.t(), integer()) :: :ok
-      defeffect read_numbers(id, numbers) do
-        ...
-      end
-    end
+  @spec write_numbers(String.t(), integer()) :: :ok
+  defeffect read_numbers(id, numbers) do
+    ...
+  end
+end
+```
 
 By using the `deffect`-macro, we define an effect-function as well as provide 
 a default-implementation in its body. For more detail see the moduledoc in the
@@ -54,28 +56,32 @@ a default-implementation in its body. For more detail see the moduledoc in the
 ### Rebinding (or mocking) effects in tests
 
 To mock effects one simply has to use `EfxCase`-Module and write
-expect functions. Lets say we have the following effects
+bind functions. Lets say we have the following effects
 implementation:
 
-    defmodule MyModule do
-      use Common.Effects 
-  
-      @spec get() :: list()
-      defeffect get() do
-         ...
-      end
-    end
+```elixir
+defmodule MyModule do
+  use Common.Effects 
+
+  @spec get() :: list()
+  defeffect get() do
+     ...
+  end
+end
+```
   
 The following shows code that mocks the effect:
 
-    defmodule SomeTest do
-      use Common.EffectsCase
-  
-      test "test something" do
-        expect(MyModule, :get, fn -> [1,2,3] end)
-        ...
-      end
-    end
+```elixir
+defmodule SomeTest do
+  use Common.EffectsCase
+
+  test "test something" do
+    bind(MyModule, :get, fn -> [1,2,3] end)
+    ...
+  end
+end
+```
 
 Instead of returning the value of the default implementation,
 `MyModule.get/0` returns `[1,2,3]`.
