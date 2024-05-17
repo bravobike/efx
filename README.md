@@ -95,3 +95,7 @@ For more details see the `EfxCase`-module.
 
 
 
+## License
+Copyright © 2024 Bravobike GmbH and Contributors
+
+This project is licensed under the Apache 2.0 license.
