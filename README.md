@@ -30,8 +30,6 @@ Efx follows the following principles:
 - We want zero performance overhead in production.
 
 
-## Setup
-
 ## Usage
 
 ### Defining Effects
