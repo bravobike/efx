@@ -1,14 +1,25 @@
 defmodule Efx.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @github_page "https://github.com/bravobike/efx"
+
   def project do
     [
       app: :efx,
-      version: "0.1.0",
-      elixir: "~> 1.15",
+      version: @version,
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+      # doc
+      name: "Efx",
+      description: "A library to declarativly write testable effects",
+      homepage_url: @github_page,
+      source_url: @github_page,
+      docs: docs(),
+      package: package()
     ]
   end
 
@@ -29,6 +40,27 @@ defmodule Efx.MixProject do
     [
       {:typed_struct, "~> 0.3.0"},
       {:process_tree, "0.1.2"}
+    ]
+  end
+
+  defp docs() do
+    [
+      api_reference: false,
+      authors: ["Simon Härer"],
+      canonical: "http://hexdocs.pm/efc",
+      main: "Efx",
+      source_ref: "v#{@version}"
+    ]
+  end
+
+  defp package do
+    [
+      files: ~w(mix.exs README.md lib),
+      licenses: ["Apache-2.0"],
+      links: %{
+        "GitHub" => @github_page
+      },
+      maintainers: ["Simon Härer"]
     ]
   end
 end
