@@ -215,7 +215,16 @@ defmodule EfxCase do
   end
 
   def bind(pid, effects_behaviour, key, num \\ nil, fun) do
-    {:arity, arity} = Function.info(fun, :arity)
+    {fun, arity} =
+      case fun do
+        {:default, _} = f ->
+          f
+
+        _ ->
+          {:arity, arity} = Function.info(fun, :arity)
+          {fun, arity}
+      end
+
     MockState.add_fun(pid, effects_behaviour, key, arity, fun, num)
   end
 end

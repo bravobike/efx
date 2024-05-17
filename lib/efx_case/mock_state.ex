@@ -73,8 +73,11 @@ defmodule EfxCase.MockState do
       end)
 
     case fun do
-      :default -> Kernel.apply(behaviour, fun_identifier, args)
-      fun -> Kernel.apply(fun, args)
+      :default ->
+        Kernel.apply(behaviour, :"__#{fun_identifier}", args)
+
+      fun ->
+        Kernel.apply(fun, args)
     end
   end
 

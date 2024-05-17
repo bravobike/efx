@@ -82,10 +82,12 @@ defmodule Efx do
   end
 
   defmacro defeffect(fun, do_block) do
-    {name, _, args} = fun
+    {name, ctx, args} = fun
     module = __CALLER__.module
 
     Module.put_attribute(module, :effects, {name, Enum.count(args)})
+    impl_name = :"__#{name}"
+    impl_fun = {impl_name, ctx, args}
 
     if Mix.env() == :test do
       quote do
@@ -94,8 +96,12 @@ defmodule Efx do
           if EfxCase.MockState.mocked?(unquote(module)) do
             EfxCase.MockState.call(unquote(module), unquote(name), unquote(args))
           else
-            unquote(Keyword.get(do_block, :do))
+            Kernel.apply(__MODULE__, unquote(impl_name), unquote(args))
           end
+        end
+
+        def unquote(impl_fun) do
+          unquote(Keyword.get(do_block, :do))
         end
       end
     else
