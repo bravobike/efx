@@ -60,7 +60,7 @@ a default-implementation in its body. For more detail see the moduledoc in the
 `Efx`-module.
 
 
-### Rebinding (or mocking) Effects in Tests
+### Binding Effects in Tests
 
 To bind effects one simply has to use `EfxCase`-Module and call bind functions. Lets say we have the following effects
 implementation:

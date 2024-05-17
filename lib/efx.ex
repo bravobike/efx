@@ -3,14 +3,14 @@ defmodule Efx do
   A module to be `use`d to define effects.
 
   An effect is a function that executes side effects and thus is
-  hard to test or event untestable. With the effects abstraction we
+  hard to test or even untestable. With the effects abstraction we
   can define mockable effect-functions comfortably.
 
   Since effects are used on a module level utilizing the use-macro,
   all effect-functions defined inside build a group. We can later
-  either mock all or none of this functions.
+  either bind all or none of this functions.
 
-  This module provides macros for effects that are expanded into a
+  This module provides macros for implementing effects that are expanded into a
   mockable behaviour, e.g.
 
       defmodule MyEffect do

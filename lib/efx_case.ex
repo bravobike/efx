@@ -2,22 +2,21 @@ defmodule EfxCase do
   @doc """
   Module for testing with effects.
 
-  Rebinding effects in tests follows these principles:
+  Binding effects in tests follows these principles:
 
-  - By default, an effects module is bound to the default implementation.
-  - We either rebind all effect functions of a module or none.
-    We cannot bind single functions (except the explicit use of :default)
-  - A function is either rebound without a specified number of calls
-    or with a specified number of calls. If a function has multiple
-    binds, they are called in given order, until they satisfied their
+  - By default, all effects of a module is bound to the default implementation.
+  - We either bind all effect functions of a module or none.
+    We cannot bind single functions (except the explicit use of :default).
+    If we rebind only one effect and the other is called, we raise. 
+  - A function is either bound without or with a specified number of expected calls.
+    If a function has multiple binds, they are called in given order, until they satisfied their
     expected number of calls.
   - The number of expected calls is always veryified.
 
-  ## Rebinding effects
+  ## Binding effects
 
-  To rebind effects one simply has to use this module and call
-  bind functions. Lets say we have the following effects
-  implementation:
+  To bind effects one simply has to use this module and call
+  the bind macro. Lets say we have the following effects implementation:
 
       defmodule MyModule do
         use Common.Effects 
@@ -28,7 +27,7 @@ defmodule EfxCase do
         end
       end
     
-  The following shows code that rebinds the effect:
+  The following shows code that binds the effect:
 
       defmodule SomeTest do
         use Common.EffectsCase
@@ -42,9 +41,9 @@ defmodule EfxCase do
   Instead of returning the value of the default implementation,
   `MyModule.get/0` returns `[1,2,3]`.
 
-  ## Rebinding with an expected number of calls
+  ## Binding with an expected Number of Calls
 
-  We can also define an expected number of calls. The expected
+  We can additionally define an expected number of calls. The expected
   number of calls is always verified - a test run will fail if
   it is not satisfied, as well as exceeded.
 
@@ -60,12 +59,12 @@ defmodule EfxCase do
         end
       end
 
-  In this case, we verify that the rebound function `get/0` is called
+  In this case, we verify that the bound function `get/0` is called
   exactly twice.
 
   ## Binding globally
 
-  Effect rebinding uses process dictionaries to find the right binding
+  Effect binding uses process dictionaries to find the right binding
   through-out the supervision-tree.
   As long as calling processes have the testing process that defines
   the binding as an ancestor, binding works. If we cannot ensure that,
@@ -82,7 +81,7 @@ defmodule EfxCase do
       end
 
 
-  ## Binding the same function with multiple bind-calls
+  ## Binding the same Function with multiple bind-Calls
 
   We can chain binds for the same functions. They then
   get executed until their number of expected calls is satisfied:
@@ -103,7 +102,7 @@ defmodule EfxCase do
   and the last get, specified without an expected number of calls,
   is used for the rest of the execution.
 
-  ## Setup for many tests
+  ## Setup for many Tests
 
   If we want to setup the same binding for multiple tests we can do
   this as follows:
@@ -122,7 +121,7 @@ defmodule EfxCase do
       end
 
 
-  ## Explicitly defaulting one function in tests
+  ## Explicitly defaulting one Function in Tests
 
   While it is best practice to bind all function of a module or none,
   we can also default certain functions explicitly:
@@ -147,7 +146,7 @@ defmodule EfxCase do
     
         test "test something" do
           bind(MyModule, :get, fn -> [1,2,3] end)
-          bind(MyModule, :put, :default)
+          bind(MyModule, :put, {:default, 0})
           ...
         end
       end
