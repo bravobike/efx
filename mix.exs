@@ -15,7 +15,7 @@ defmodule Efx.MixProject do
 
       # doc
       name: "Efx",
-      description: "A library to declarativly write testable effects",
+      description: "A library to declaratively write testable effects",
       homepage_url: @github_page,
       source_url: @github_page,
       docs: docs(),
