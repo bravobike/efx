@@ -47,7 +47,7 @@ defmodule Efx.MixProject do
     [
       api_reference: false,
       authors: ["Simon Härer"],
-      canonical: "http://hexdocs.pm/efc",
+      canonical: "http://hexdocs.pm/efx",
       main: "Efx",
       source_ref: "v#{@version}"
     ]
