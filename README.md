@@ -14,7 +14,7 @@ that contains side effects testable.
 
 Existing mock libraries often set up mocks in non declarative ways: configs need 
 to be adapted & mock need to be initialized. In source code there are intrusive 
-instructions to set up mockable code. `Efx` is very inuntrusive in both, source
+instructions to set up mockable code. `Efx` is very unintrusive in both, source
 code and test code. It offers a convenient and declarative syntax. Instead of 
 mocking we talk about binding effects.
 
