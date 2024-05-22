@@ -2,7 +2,7 @@
 
 ![Tests](https://github.com/smoes/validixir/actions/workflows/main.yaml/badge.svg)
 
-Testing with side-effects is often hard. Various solutions exists to work around
+Testing with side-effects is often hard. Various solutions exist to work around
 the difficulties, e.g. mocking. This library offers a very easy way to achieve 
 testable code by mocking. Instead of mocking we talk about binding effects to another implementation.
 `Efx` offers a declarative way to mark effectful functions and bind them in tests. 
