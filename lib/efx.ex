@@ -33,7 +33,7 @@ defmodule Efx do
       @callback write_numbers(String.t(), integer()) :: :ok
 
   This module is meant to be used in conjuction with the mocking test helpers
-  found in `Efx.EffectsCase`.
+  found in `EfxCase`.
   """
 
   defmacro __using__(opts) do
