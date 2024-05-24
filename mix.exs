@@ -38,6 +38,7 @@ defmodule Efx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:typed_struct, "~> 0.3.0"},
       {:process_tree, "0.1.2"}
     ]
