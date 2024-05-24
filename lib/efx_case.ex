@@ -1,5 +1,5 @@
 defmodule EfxCase do
-  @doc """
+  @moduledoc """
   Module for testing with effects.
 
   Binding effects in tests follows these principles:
