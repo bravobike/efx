@@ -208,7 +208,7 @@ defmodule EfxCase do
     quote do
       setup do
         Enum.each(unquote(stubs), fn {k, v} ->
-          expect(unquote(effects_behaviour), k, v)
+          bind(unquote(effects_behaviour), k, v)
         end)
       end
     end
