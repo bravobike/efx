@@ -42,6 +42,7 @@ defmodule Efx do
     config_key = Keyword.get(opts, :config_key, caller)
 
     Module.register_attribute(caller, :effects, accumulate: true)
+    Module.register_attribute(caller, :effect_impls, accumulate: true)
 
     quote do
       import Efx
@@ -59,7 +60,11 @@ defmodule Efx do
   defmacro __before_compile__(_) do
     caller = __CALLER__.module
     effects = Module.get_attribute(caller, :effects, [])
+    effect_impls = Module.get_attribute(caller, :effect_impls, [])
     specs = Module.get_attribute(caller, :spec, [])
+
+    Module.delete_attribute(caller, :effects)
+    Module.delete_attribute(caller, :effect_impls)
 
     # the following code searches for the effects, collected in
     # the module attribute `@effects`, finds the specs for the
@@ -78,7 +83,8 @@ defmodule Efx do
         nil ->
           raise "No spec for effect found: #{effect}"
       end
-    end)
+    end) ++
+      effect_impls
   end
 
   defmacro defeffect(fun, do_block) do
@@ -89,6 +95,17 @@ defmodule Efx do
     impl_name = :"__#{name}"
     impl_fun = {impl_name, ctx, args}
 
+    impl =
+      quote do
+        def unquote(impl_fun) do
+          unquote(Keyword.get(do_block, :do))
+        end
+      end
+
+    # we store the implementations here to put them all together in the end
+    # to avoid warnings about non grouped definitions of the same function
+    Module.put_attribute(module, :effect_impls, impl)
+
     if Mix.env() == :test do
       quote do
         @impl unquote(module)
@@ -98,10 +115,6 @@ defmodule Efx do
           else
             Kernel.apply(__MODULE__, unquote(impl_name), unquote(args))
           end
-        end
-
-        def unquote(impl_fun) do
-          unquote(Keyword.get(do_block, :do))
         end
       end
     else
