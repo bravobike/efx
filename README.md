@@ -1,6 +1,7 @@
 # Efx
 
 ![Tests](https://github.com/smoes/validixir/actions/workflows/main.yaml/badge.svg)
+[![Hex version badge](https://img.shields.io/hexpm/v/validixir.svg)](https://hex.pm/packages/validixir)
 
 Testing with side-effects is often hard. Various solutions exist to work around
 the difficulties, e.g. mocking. This library offers a very easy way to achieve 
