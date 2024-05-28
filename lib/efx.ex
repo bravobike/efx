@@ -187,9 +187,7 @@ defmodule Efx do
 
     already_exists? = already_exists?(module, name, arity)
 
-    unless already_exists? do
-      Module.put_attribute(module, :effect_impls, {name, Enum.count(args), impl})
-    end
+    Module.put_attribute(module, :effect_impls, {name, Enum.count(args), impl})
 
     if Mix.env() == :test do
       unless already_exists? do

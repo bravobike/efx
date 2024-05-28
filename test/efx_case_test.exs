@@ -25,6 +25,11 @@ defmodule EfxCaseTest do
       assert EfxExample.get() == []
     end
 
+    test "on multi funs" do
+      bind(EfxExample, :multi_fun, fn arg -> arg end)
+      assert EfxExample.multi_fun(:a) == :a
+    end
+
     test "works with expected number of calls" do
       bind(EfxExample, :get, fn -> [] end, calls: 1)
       assert EfxExample.get() == []
