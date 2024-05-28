@@ -17,4 +17,15 @@ defmodule EfxCase.EfxExample do
   defeffect fun_with_wildcard(_arg) do
     [1, 2, 3, 4, 5]
   end
+
+  # we use this to see if functions with multiple
+  # implementations work properly at compile time
+  @spec multi_fun(any()) :: list()
+  defeffect multi_fun([] = list) do
+    list
+  end
+
+  defeffect multi_fun(string) do
+    string
+  end
 end

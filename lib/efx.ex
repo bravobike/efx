@@ -131,7 +131,11 @@ defmodule Efx do
   defmacro __before_compile__(_) do
     caller = __CALLER__.module
     effects = Module.get_attribute(caller, :effects, [])
-    effect_impls = Module.get_attribute(caller, :effect_impls, [])
+
+    effect_impls =
+      Module.get_attribute(caller, :effect_impls, [])
+      |> Enum.map(fn {_, _, impl} -> impl end)
+
     specs = Module.get_attribute(caller, :spec, [])
 
     Module.delete_attribute(caller, :effects)
@@ -179,16 +183,24 @@ defmodule Efx do
 
     # we store the implementations here to put them all together in the end
     # to avoid warnings about non grouped definitions of the same function
-    Module.put_attribute(module, :effect_impls, impl)
+    arity = Enum.count(args)
+
+    already_exists? = already_exists?(module, name, arity)
+
+    unless already_exists? do
+      Module.put_attribute(module, :effect_impls, {name, Enum.count(args), impl})
+    end
 
     if Mix.env() == :test do
-      quote do
-        @impl unquote(module)
-        def unquote(alt_fun) do
-          if EfxCase.MockState.mocked?(unquote(module)) do
-            EfxCase.MockState.call(unquote(module), unquote(name), unquote(alt_args))
-          else
-            Kernel.apply(__MODULE__, unquote(impl_name), unquote(alt_args))
+      unless already_exists? do
+        quote do
+          @impl unquote(module)
+          def unquote(alt_fun) do
+            if EfxCase.MockState.mocked?(unquote(module)) do
+              EfxCase.MockState.call(unquote(module), unquote(name), unquote(alt_args))
+            else
+              Kernel.apply(__MODULE__, unquote(impl_name), unquote(alt_args))
+            end
           end
         end
       end
@@ -207,4 +219,14 @@ defmodule Efx do
 
   @spec spec_arity(tuple()) :: arity()
   defp spec_arity({:"::", _, [{_, _, args} | _]}), do: Enum.count(args)
+
+  @spec already_exists?(module(), atom(), arity()) :: boolean()
+  def already_exists?(module, name, arity) do
+    Enum.any?(
+      Module.get_attribute(module, :effect_impls),
+      fn {other_name, other_arity, _} ->
+        name == other_name && arity == other_arity
+      end
+    )
+  end
 end
