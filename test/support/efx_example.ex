@@ -10,4 +10,11 @@ defmodule EfxCase.EfxExample do
   defeffect append_get(arg) do
     [1, 2, 3, 4, 5] ++ [arg]
   end
+
+  # we use this to check that we don't get a warning
+  # about the wildcard param at comepile time.
+  @spec fun_with_wildcard(any()) :: list()
+  defeffect fun_with_wildcard(_arg) do
+    [1, 2, 3, 4, 5]
+  end
 end

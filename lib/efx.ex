@@ -162,6 +162,10 @@ defmodule Efx do
     {name, ctx, args} = fun
     module = __CALLER__.module
 
+    # we do this to not get warnings for wildcard params in functions
+    alt_args = Macro.generate_arguments(Enum.count(args), module)
+    alt_fun = {name, ctx, alt_args}
+
     Module.put_attribute(module, :effects, {name, Enum.count(args)})
     impl_name = :"__#{name}"
     impl_fun = {impl_name, ctx, args}
@@ -180,11 +184,11 @@ defmodule Efx do
     if Mix.env() == :test do
       quote do
         @impl unquote(module)
-        def unquote(fun) do
+        def unquote(alt_fun) do
           if EfxCase.MockState.mocked?(unquote(module)) do
-            EfxCase.MockState.call(unquote(module), unquote(name), unquote(args))
+            EfxCase.MockState.call(unquote(module), unquote(name), unquote(alt_args))
           else
-            Kernel.apply(__MODULE__, unquote(impl_name), unquote(args))
+            Kernel.apply(__MODULE__, unquote(impl_name), unquote(alt_args))
           end
         end
       end
