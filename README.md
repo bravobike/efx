@@ -1,6 +1,6 @@
 # Efx
 
-![Tests](https://github.com/smoes/validixir/actions/workflows/main.yaml/badge.svg)
+![Tests](https://github.com/bravobike/efx/actions/workflows/main.yaml/badge.svg)
 [![Hex version badge](https://img.shields.io/hexpm/v/efx.svg)](https://hex.pm/packages/efx)
 
 Testing with side-effects is often hard. Various solutions exist to work around
