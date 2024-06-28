@@ -66,7 +66,7 @@ implementation:
 
 ```elixir
 defmodule MyModule do
-  use Common.Effects 
+  use Efx 
 
   @spec get() :: list()
   defeffect get() do
@@ -79,7 +79,7 @@ The following shows code that binds the effect to a different implementation in 
 
 ```elixir
 defmodule SomeTest do
-  use Common.EffectsCase
+  use EfxCase
 
   test "test something" do
     bind(MyModule, :get, fn -> [1,2,3] end)

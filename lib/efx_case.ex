@@ -19,7 +19,7 @@ defmodule EfxCase do
   the bind macro. Lets say we have the following effects implementation:
 
       defmodule MyModule do
-        use Common.Effects 
+        use Efx
     
         @spec get() :: list()
         defeffect get() do
@@ -30,7 +30,7 @@ defmodule EfxCase do
   The following shows code that binds the effect:
 
       defmodule SomeTest do
-        use Common.EffectsCase
+        use EfxCase
     
         test "test something" do
           bind(MyModule, :get, fn -> [1,2,3] end)
@@ -51,7 +51,7 @@ defmodule EfxCase do
 
 
       defmodule SomeTest do
-        use Common.EffectsCase
+        use EfxCase
     
         test "test something" do
           expect(MyModule, :get, fn -> [1,2,3] end, calls: 2)
@@ -72,7 +72,7 @@ defmodule EfxCase do
   to async to not interfere:
 
       defmodule SomeTest do
-        use Common.EffectsCase, async: false
+        use EfxCase, async: false
     
         test "test something" do
           bind(MyModule, :get, fn -> [1,2,3] end)
@@ -87,7 +87,7 @@ defmodule EfxCase do
   get executed until their number of expected calls is satisfied:
 
       defmodule SomeTest do
-        use Common.EffectsCase
+        use EfxCase
     
         test "test something" do
           bind(MyModule, :get,  fn -> [1,2,3] end, calls: 1)
@@ -108,7 +108,7 @@ defmodule EfxCase do
   this as follows:
 
       defmodule SomeTest do
-        use Common.EffectsCase
+        use EfxCase
 
         setup_effects(MyModule,
            :get, fn -> [1,2,3] end
@@ -127,7 +127,7 @@ defmodule EfxCase do
   we can also default certain functions explicitly:
 
       defmodule MyModule do
-        use Common.Effects 
+        use EfxCase 
     
         @spec get() :: list()
         defeffect get() do
@@ -142,7 +142,7 @@ defmodule EfxCase do
     
 
       defmodule SomeTest do
-        use Common.EffectsCase
+        use EfxCase
     
         test "test something" do
           bind(MyModule, :get, fn -> [1,2,3] end)

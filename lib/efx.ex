@@ -79,7 +79,7 @@ defmodule Efx do
 
   ```elixir
   defmodule MyModule do
-    use Common.Effects 
+    use Efx 
 
     @spec get() :: list()
     defeffect get() do
@@ -92,7 +92,7 @@ defmodule Efx do
 
   ```elixir
   defmodule SomeTest do
-    use Common.EffectsCase
+    use EfxCase
 
     test "test something" do
       bind(MyModule, :get, fn -> [1,2,3] end)
