@@ -54,7 +54,7 @@ defmodule Efx do
     end
 
     @spec write_numbers(String.t(), integer()) :: :ok
-    defeffect read_numbers(id, numbers) do
+    defeffect write_numbers(id, numbers) do
       ...
     end
   end
