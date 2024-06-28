@@ -8,6 +8,9 @@ the difficulties, e.g. mocking. This library offers a very easy way to achieve
 testable code by mocking. Instead of mocking we talk about binding effects to another implementation.
 `Efx` offers a declarative way to mark effectful functions and bind them in tests. 
 
+Efx allows async testing even in with child-processes, since it uses process-dictionaries
+to store bindings and find them in the super vision tree.
+
 ## Rationale 
 
 Efx is a small library that does one thing and one thing only very well: Make code
