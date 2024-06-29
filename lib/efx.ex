@@ -167,6 +167,7 @@ defmodule Efx do
 
   defmacro defeffect(fun, do_block) do
     {name, ctx, args} = fun
+    args = ensure_list(args)
     module = __CALLER__.module
 
     # we do this to not get warnings for wildcard params in functions
@@ -216,10 +217,16 @@ defmodule Efx do
   end
 
   @spec spec_name({any(), any(), list()}) :: name :: atom()
-  defp spec_name({_, _, a}), do: List.first(a) |> elem(0)
+  defp spec_name({_, _, a}) do
+    a = ensure_list(a)
+    List.first(a) |> elem(0)
+  end
 
   @spec spec_arity(tuple()) :: arity()
-  defp spec_arity({:"::", _, [{_, _, args} | _]}), do: Enum.count(args)
+  defp spec_arity({:"::", _, [{_, _, args} | _]}) do
+    args = ensure_list(args)
+    Enum.count(args)
+  end
 
   @spec already_exists?(module(), atom(), arity()) :: boolean()
   def already_exists?(module, name, arity) do
@@ -230,4 +237,8 @@ defmodule Efx do
       end
     )
   end
+
+  @spec ensure_list(list() | nil) :: list()
+  defp ensure_list(nil), do: []
+  defp ensure_list(list), do: list
 end
