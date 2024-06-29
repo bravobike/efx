@@ -63,4 +63,10 @@ defmodule EfxCaseGlobalTest do
       assert [] = TestAgent.get()
     end
   end
+
+  describe "style" do
+    test "zero-artity may be defined without parens" do
+      assert EfxExample.without_parens() == :ok
+    end
+  end
 end

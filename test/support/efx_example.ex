@@ -28,4 +28,9 @@ defmodule EfxCase.EfxExample do
   defeffect multi_fun(string) do
     string
   end
+
+  @spec without_parens :: atom
+  defeffect without_parens do
+    :ok
+  end
 end
