@@ -4,42 +4,65 @@ defmodule EfxCase do
 
   Binding effects in tests follows these principles:
 
-  - By default, all effects of a module is bound to the default implementation.
+  - By default, all effects of a module are bound to the default implementation.
   - We either bind all effect functions of a module or none.
     We cannot bind single functions (except the explicit use of :default).
-    If we rebind only one effect and the other is called, we raise. 
+    If we rebind only one effect and the other is called, we raise.
   - A function is either bound without or with a specified number of expected calls.
-    If a function has multiple binds, they are called in given order, until they satisfied their
+    If a function has multiple binds, they are called in the given order, until they satisfied their
     expected number of calls.
-  - The number of expected calls is always veryified.
+  - The number of expected calls is always verified.
 
   ## Binding effects
 
-  To bind effects one simply has to use this module and call
-  the bind macro. Lets say we have the following effects implementation:
+  To bind effects, one simply has to use this module and call
+  the bind macro. Let's say we have the following effects implementation:
 
       defmodule MyModule do
-        use Efx
-    
-        @spec get() :: list()
-        defeffect get() do
-           ...
-        end
-      end
-    
-  The following shows code that binds the effect:
 
-      defmodule SomeTest do
+        use Efx
+
+        def read_data() do
+          read_file!()
+          |> deserialize()
+        end
+
+        def write_data(data) do
+          data
+          |> serialize()
+          |> write_file!()
+        end
+
+        @spec read_file!() :: binary()
+        defeffect read_file!() do
+          File.read!("file.txt")
+        end
+
+        @spec write_file!(binary()) :: :ok
+        defeffect write_file!(raw) do
+          File.write!("file.txt", raw)
+        end
+
+        ...
+
+      end
+
+  We can now rebind the code in tests for different test scenarios.
+
+      defmodule MyModuleTest do
         use EfxCase
-    
-        test "test something" do
-          bind(MyModule, :get, fn -> [1,2,3] end)
+
+        test "works as expected with empty file" do
+          bind(MyModule, :read_file!, fn -> "" end)
+
+          # test code here
           ...
         end
       end
 
-  Instead of returning the value of the default implementation,
-  `MyModule.get/0` returns `[1,2,3]`.
+  Instead of returning the value of the default implementation, `MyModule.read_file!/0` returns an empty string now, representing an empty file.
+
+  Once we bind one effect of a module, all effect-function of that module need to be bound. If an unbound effect-function is called, an error is raised.
 
   ## Binding with an expected Number of Calls
 
@@ -49,73 +72,72 @@ defmodule EfxCase do
 
   We can define a number of expected calls as follows:
 
+      test "works as expected with empty file" do
+        bind(MyModule, :read_file!, fn -> "" end, calls: 1)
 
-      defmodule SomeTest do
-        use EfxCase
-    
-        test "test something" do
-          expect(MyModule, :get, fn -> [1,2,3] end, calls: 2)
-          ...
-        end
+        # test code here
+        ...
       end
 
   In this case, we verify that the bound function `get/0` is called
   exactly twice.
 
+  We can also use multiple binding with the call option set. Then, they
+  are executed until the number of bindings is satisfied, followed by the next
+  binding:
+
+
+      test "works as expected with empty file and then some data" do
+        bind(MyModule, :read_file!, fn -> "" end, calls: 1)
+        bind(MyModule, :read_file!, fn -> "some meaningful data" end, calls: 1)
+
+        # test code here
+        ...
+      end
+
+  In the above example, the test only succeeds if there are 2 calls to the effect-function.
+  The first call returns an empty string, while the second returns `"some meaningful data"`.
+
   ## Binding globally
 
   Effect binding uses process dictionaries to find the right binding
-  through-out the supervision-tree.
+  by traversing the supervision-tree towards the root.
   As long as calling processes have the testing process that defines
   the binding as an ancestor, binding works. If we cannot ensure that,
-  we can set binding to global. However, then the tests must be set
+  we can set binding to global. However, then tests must be explicitly set
   to async to not interfere:
 
-      defmodule SomeTest do
+      defmodule MyModuleTest do
         use EfxCase, async: false
-    
-        test "test something" do
-          bind(MyModule, :get, fn -> [1,2,3] end)
+
+        test "async test works as expected" do
+          bind(MyModule, :read_file!, fn -> "" end)
+
+          # test code here
           ...
         end
       end
 
-
-  ## Binding the same Function with multiple bind-Calls
-
-  We can chain binds for the same functions. They then
-  get executed until their number of expected calls is satisfied:
-
-      defmodule SomeTest do
-        use EfxCase
-    
-        test "test something" do
-          bind(MyModule, :get,  fn -> [1,2,3] end, calls: 1)
-          bind(MyModule, :get,  fn -> [] end, calls: 2)
-          bind(MyModule, :get, fn -> [1,2] end)
-          ...
-        end
-      end
-
-  In this example the first binding of `get/0` gets called one time,
-  then the second binding is used to replace the call two more times
-  and the last get, specified without an expected number of calls,
-  is used for the rest of the execution.
 
   ## Setup for many Tests
 
-  If we want to setup the same binding for multiple tests we can do
+  If we want to set up the same binding for multiple tests, we can do
   this as follows:
 
-      defmodule SomeTest do
-        use EfxCase
+      defmodule MyModuleTest do
+        use EfxCase, async: false
 
         setup_effects(MyModule,
-           :get, fn -> [1,2,3] end
+           read_file!: fn -> "some meaningful data" end
         )
-    
-        test "test something" do
-          # test with mocked get
+
+        test "works with meaningful data" do
+          # test code here
+          ...
+        end
+
+        test "another test works with meaningful data" do
+          # test code here
           ...
         end
       end
@@ -126,35 +148,23 @@ defmodule EfxCase do
   While it is best practice to bind all function of a module or none,
   we can also default certain functions explicitly:
 
-      defmodule MyModule do
-        use EfxCase 
-    
-        @spec get() :: list()
-        defeffect get() do
-           ...
-        end
-    
-        @spec put(any()) :: :ok
-        defeffect put(any()) do
-           ...
-        end
-      end
-    
 
-      defmodule SomeTest do
-        use EfxCase
-    
-        test "test something" do
-          bind(MyModule, :get, fn -> [1,2,3] end)
-          bind(MyModule, :put, {:default, 0})
+      defmodule MyModuleTest do
+        use EfxCase, async: false
+
+        test "works with meaningful data" do
+          bind(MyModule, :read_file!, fn -> "some meaningful data" end)
+          bind(MyModule, :write_file!, {:default, 1})
+
+          # test code here
           ...
         end
       end
 
-  While entirely leaving out `put/1` would result in an error
-  (when called), we can tell the effects library to use it's
-  default implementation. Note that defaulting can be combined
-  with an expected number of calls.
+  While entirely leaving out `write_file!/1` would result in an error
+  (when called), we can tell `Efx` to use it's
+  default implementation. Note that when default, we have to provide the arity of the function.
+  It can be combined with an expected number of calls.
   """
 
   require Logger
