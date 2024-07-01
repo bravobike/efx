@@ -1,112 +1,135 @@
 defmodule Efx do
   @moduledoc """
-    Testing with side-effects is often hard. Various solutions exist to work around
-  the difficulties, e.g. mocking. This library offers a very easy way to achieve 
+
+  Testing with side-effects is often hard. Various solutions exist to work around
+  the difficulties, e.g. mocking. This library offers a very easy way to achieve
   testable code by mocking. Instead of mocking we talk about binding effects to another implementation.
-  `Efx` offers a declarative way to mark effectful functions and bind them in tests. 
+  `Efx` offers a declarative way to mark effectful functions and bind them in tests.
 
-  Efx allows async testing even in with child-processes in tests, since it uses process-dictionaries
-  to store bindings and find them in the super vision tree.
+  Efx allows async testing even in with child-processes, since it uses process-dictionaries
+  to store bindings and find them in the super vision tree (see this [test-case](https://github.com/bravobike/efx/blob/improve-doc-example/test/efx_case_test.exs#L52)).
 
-  ## Rationale 
+  ## Rationale
 
   Efx is a small library that does one thing and one thing only very well: Make code
-  that contains side effects testable. 
+  that contains side effects testable.
 
-  Existing mock libraries often set up mocks in non declarative ways: configs need 
-  to be adapted & mock need to be initialized. In source code there are intrusive 
+  Existing mock libraries often set up mocks in non-declarative ways: configs need
+  to be adapted & mock need to be initialized. In source code there are intrusive
   instructions to set up mockable code. `Efx` is very unintrusive in both, source
-  code and test code. It offers a convenient and declarative syntax. Instead of 
+  code and test code. It offers a convenient and declarative syntax. Instead of
   mocking we talk about binding effects.
 
   Efx follows the following principles:
 
   - Implementing and binding effects should be as simple and declarative as possible.
   - Modules contain groups of effects that can only be bound as a set.
-  - We want to run as much tests async as possible. Thus, we traverse 
-    the supervision tree to find rebound effects in the ancest test processes,
-    in an isolated manner.
-  - Effects by default execute their default implemenation in tests, and thus, must be explicitly bound.
-  - Effects can only be bound in tests, but not in production. In production always the default implementation is executed.
+  - We want to run as many tests async as possible. Thus, we traverse
+  the supervision tree to find rebound effects in the spawning test processes,
+  in an isolated manner.
+  - Effects by default execute their default implementation in tests, and thus, must be explicitly bound.
+  - Effects can only be bound in tests, but not in production. In production, the default implementation is always executed.
   - We want zero performance overhead in production.
 
 
   ## Usage
 
-  ### Defining Effects
+  ### Example
 
-  An effect is a function that executes side effects and thus is
-  hard to test or even untestable. With the effects abstraction we
-  can define mockable effect-functions comfortably.
+  Given the following code:
 
-  Since effects are used on a module level utilizing the use-macro,
-  all effect-functions defined inside build a group. We can later
-  either bind all or none of this functions.
+      defmodule MyModule do
 
-  This module provides macros for implementing effects that are expanded into a
-  mockable behaviour, e.g.
+        def read_data() do
+          File.read!("file.txt")
+          |> deserialize()
+        end
 
+        def write_data(data) do
+          serialized_data = data |> serialize()
+          File.write!("file.txt", deserialized_data)
+        end
 
-  ```elixir
-  defmodule MyEffect do
-    use Efx
+        defp deserialize(raw) do
+          ...
+        end
 
-    @spec read_numbers(String.t()) :: integer()
-    defeffect read_numbers(id) do
-      ... 
-    end
+        defp serialize(data) do
+          ...
+        end
 
-    @spec write_numbers(String.t(), integer()) :: :ok
-    defeffect write_numbers(id, numbers) do
-      ...
-    end
-  end
-  ```
+      end
 
+  In this example, it's quite complicated to test deserialization and serialization since
+  we have to prepare and place the file correctly for each test.
 
-    The above example generates a behaviour with the callbacks
-
-  ```elixir
-        @callback read_numbers(String.t()) :: integer()
-        @callback write_numbers(String.t(), integer()) :: :ok
-  ```
-
-  By using the `defeffect`-macro, we define an effect-function as well as provide 
-  a default-implementation in its body. For more detail see the moduledoc in the
-  `Efx`-module.
+  We can rewrite the module using `Efx` as follows:
 
 
-  ### Binding Effects in Tests
+      defmodule MyModule do
 
-  To bind effects one simply has to use `EfxCase`-Module and call bind functions. Lets say we have the following effects implementation:
+        use Efx
 
-  ```elixir
-  defmodule MyModule do
-    use Efx 
+        def read_data() do
+          read_file!()
+          |> deserialize()
+        end
 
-    @spec get() :: list()
-    defeffect get() do
-       ...
-    end
-  end
-  ```
-    
-  The following shows code that binds the effect to a different implementation in tests:
+        def write_data(data) do
+          data
+          |> serialize()
+          |> write_file!()
+        end
 
-  ```elixir
-  defmodule SomeTest do
-    use EfxCase
+        @spec read_file!() :: binary()
+        defeffect read_file!() do
+          File.read!("file.txt")
+        end
 
-    test "test something" do
-      bind(MyModule, :get, fn -> [1,2,3] end)
-      ...
-    end
-  end
-  ```
+        @spec write_file!(binary()) :: :ok
+        defeffect write_file!(raw) do
+          File.write!("file.txt", raw)
+        end
 
-  Instead of returning the value of the default implementation, `MyModule.get/0` returns `[1,2,3]`.
+        ...
 
-  For more details see the `EfxCase`-module.
+      end
+
+  By using the `defeffect`-macro, we define an effect-function as well as provide
+  a default-implementation in its body. It is mandatory for each of the effect-functions to have a matching spec.
+
+  The above code is now easily testable since we can rebind the effect-functions with ease:
+
+      defmodule MyModuleTest do
+
+        use EfxCase
+
+        describe "read_data/0" do
+          test "works as expected with empty file" do
+            bind(MyModule, :read_file!, fn -> "" end)
+            bind(MyModule, :write_file!, fn _ -> :ok end)
+
+            # test code here
+            ...
+          end
+
+          test "works as expected with proper contents" do
+            bind(MyModule, :read_file!, fn -> "some expected file content" end)
+            bind(MyModule, :write_file!, fn _ -> :ok end)
+
+            # test code here
+            ...
+          end
+
+        end
+
+      end
+
+  Instead of returning the value of the default implementation, `MyModule.read_file!/0` returns test data that is needed for the test case. `MyModule.write_file!` does nothing.
+
+  For more details, see the `EfxCase`-module.
+
+  Note that Efx generates and implements a behavior. Thus, it is recommended, to move side effects to a dedicated submodule, e.g. MyModule.Effects, to not accidentally interfere with existing behaviors.
 
   """
 

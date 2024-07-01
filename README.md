@@ -3,34 +3,35 @@
 ![Tests](https://github.com/bravobike/efx/actions/workflows/main.yaml/badge.svg)
 [![Hex version badge](https://img.shields.io/hexpm/v/efx.svg)](https://hex.pm/packages/efx)
 
+
 Testing with side-effects is often hard. Various solutions exist to work around
-the difficulties, e.g. mocking. This library offers a very easy way to achieve 
+the difficulties, e.g. mocking. This library offers a very easy way to achieve
 testable code by mocking. Instead of mocking we talk about binding effects to another implementation.
-`Efx` offers a declarative way to mark effectful functions and bind them in tests. 
+`Efx` offers a declarative way to mark effectful functions and bind them in tests.
 
 Efx allows async testing even in with child-processes, since it uses process-dictionaries
 to store bindings and find them in the super vision tree (see this [test-case](https://github.com/bravobike/efx/blob/improve-doc-example/test/efx_case_test.exs#L52)).
 
-## Rationale 
+## Rationale
 
 Efx is a small library that does one thing and one thing only very well: Make code
-that contains side effects testable. 
+that contains side effects testable.
 
-Existing mock libraries often set up mocks in non declarative ways: configs need 
-to be adapted & mock need to be initialized. In source code there are intrusive 
+Existing mock libraries often set up mocks in non-declarative ways: configs need
+to be adapted & mock need to be initialized. In source code there are intrusive
 instructions to set up mockable code. `Efx` is very unintrusive in both, source
-code and test code. It offers a convenient and declarative syntax. Instead of 
+code and test code. It offers a convenient and declarative syntax. Instead of
 mocking we talk about binding effects.
 
 Efx follows the following principles:
 
 - Implementing and binding effects should be as simple and declarative as possible.
 - Modules contain groups of effects that can only be bound as a set.
-- We want to run as much tests async as possible. Thus, we traverse 
-  the supervision tree to find rebound effects in the ancest test processes,
+- We want to run as many tests async as possible. Thus, we traverse
+  the supervision tree to find rebound effects in the spawning test processes,
   in an isolated manner.
-- Effects by default execute their default implemenation in tests, and thus, must be explicitly bound.
-- Effects can only be bound in tests, but not in production. In production always the default implementation is executed.
+- Effects by default execute their default implementation in tests, and thus, must be explicitly bound.
+- Effects can only be bound in tests, but not in production. In production, the default implementation is always executed.
 - We want zero performance overhead in production.
 
 
@@ -39,7 +40,6 @@ Efx follows the following principles:
 ### Example
 
 Given the following code:
-
 
 ```elixir
 defmodule MyModule do
@@ -54,11 +54,11 @@ defmodule MyModule do
     File.write!("file.txt", deserialized_data)
   end
 
-  defp deserialize(raw) do 
+  defp deserialize(raw) do
     ...
   end
 
-  defp serialize(data) do 
+  defp serialize(data) do
     ...
   end
 
@@ -68,7 +68,7 @@ end
 In this example, it's quite complicated to test deserialization and serialization since
 we have to prepare and place the file correctly for each test.
 
-We can rewrite the module using Efx as follows:
+We can rewrite the module using `Efx` as follows:
 
 
 ```elixir
@@ -102,10 +102,8 @@ defmodule MyModule do
 end
 ```
 
-
-By using the `defeffect`-macro, we define an effect-function as well as provide 
-a default-implementation in its body. For more detail see the moduledoc in the
-`Efx`-module.
+By using the `defeffect`-macro, we define an effect-function as well as provide
+a default-implementation in its body. It is mandatory for each of the effect-functions to have a matching spec.
 
 The above code is now easily testable since we can rebind the effect-functions with ease:
 
@@ -116,14 +114,16 @@ defmodule MyModuleTest do
 
   describe "read_data/0" do
     test "works as expected with empty file" do
-      bind(MyModule, :read_data, fn -> "" end)
+      bind(MyModule, :read_file!, fn -> "" end)
+      bind(MyModule, :write_file!, fn _ -> :ok end)
 
       # test code here
       ...
     end
 
     test "works as expected with proper contents" do
-      bind(MyModule, :read_data, fn -> "some expected file content" end)
+      bind(MyModule, :read_file!, fn -> "some expected file content" end)
+      bind(MyModule, :write_file!, fn _ -> :ok end)
 
       # test code here
       ...
@@ -134,10 +134,11 @@ defmodule MyModuleTest do
 end
 ```
 
-Instead of returning the value of the default implementation, `MyModule.read_data/0` returns test data that is needed for the test case.
+Instead of returning the value of the default implementation, `MyModule.read_file!/0` returns test data that is needed for the test case. `MyModule.write_file!` does nothing.
 
-For more details see the `EfxCase`-module.
+For more details, see the `EfxCase`-module.
 
+Note that Efx generates and implements a behavior. Thus, it is recommended, to move side effects to a dedicated submodule, e.g. MyModule.Effects, to not accidentally interfere with existing behaviors.
 
 
 ## License
