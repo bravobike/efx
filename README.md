@@ -9,7 +9,7 @@ testable code by mocking. Instead of mocking we talk about binding effects to an
 `Efx` offers a declarative way to mark effectful functions and bind them in tests. 
 
 Efx allows async testing even in with child-processes, since it uses process-dictionaries
-to store bindings and find them in the super vision tree.
+to store bindings and find them in the super vision tree (see this [test-case](https://github.com/bravobike/efx/blob/improve-doc-example/test/efx_case_test.exs#L52)).
 
 ## Rationale 
 
@@ -36,62 +36,105 @@ Efx follows the following principles:
 
 ## Usage
 
-### Defining Effects
+### Example
 
-To define effects we insert the use-Macro provided by the `Efx`-Module as follows:
+Given the following code:
 
 
 ```elixir
-defmodule MyEffect do
-  use Efx
+defmodule MyModule do
 
-  @spec read_numbers(String.t()) :: integer()
-  defeffect read_numbers(id) do
-    ... 
+  def read_data() do
+    File.read!("file.txt")
+    |> deserialize()
   end
 
-  @spec write_numbers(String.t(), integer()) :: :ok
-  defeffect write_numbers(id, numbers) do
+  def write_data(data) do
+    serialized_data = data |> serialize()
+    File.write!("file.txt", deserialized_data)
+  end
+
+  defp deserialize(raw) do 
     ...
   end
+
+  defp serialize(data) do 
+    ...
+  end
+
 end
 ```
+
+In this example, it's quite complicated to test deserialization and serialization since
+we have to prepare and place the file correctly for each test.
+
+We can rewrite the module using Efx as follows:
+
+
+```elixir
+defmodule MyModule do
+
+  use Efx
+
+  def read_data() do
+    read_file!()
+    |> deserialize()
+  end
+
+  def write_data(data) do
+    data
+    |> serialize()
+    |> write_file!()
+  end
+
+  @spec read_file!() :: binary()
+  defeffect read_file!() do
+    File.read!("file.txt")
+  end
+
+  @spec write_file!(binary()) :: :ok
+  defeffect write_file!(raw) do
+    File.write!("file.txt", raw)
+  end
+
+  ...
+
+end
+```
+
 
 By using the `defeffect`-macro, we define an effect-function as well as provide 
 a default-implementation in its body. For more detail see the moduledoc in the
 `Efx`-module.
 
-
-### Binding Effects in Tests
-
-To bind effects one simply has to use `EfxCase`-Module and call bind functions. Lets say we have the following effects
-implementation:
+The above code is now easily testable since we can rebind the effect-functions with ease:
 
 ```elixir
-defmodule MyModule do
-  use Efx 
+defmodule MyModuleTest do
 
-  @spec get() :: list()
-  defeffect get() do
-     ...
-  end
-end
-```
-  
-The following shows code that binds the effect to a different implementation in tests:
-
-```elixir
-defmodule SomeTest do
   use EfxCase
 
-  test "test something" do
-    bind(MyModule, :get, fn -> [1,2,3] end)
-    ...
+  describe "read_data/0" do
+    test "works as expected with empty file" do
+      bind(MyModule, :read_data, fn -> "" end)
+
+      # test code here
+      ...
+    end
+
+    test "works as expected with proper contents" do
+      bind(MyModule, :read_data, fn -> "some expected file content" end)
+
+      # test code here
+      ...
+    end
+
   end
+
 end
 ```
 
-Instead of returning the value of the default implementation, `MyModule.get/0` returns `[1,2,3]`.
+Instead of returning the value of the default implementation, `MyModule.read_data/0` returns test data that is needed for the test case.
 
 For more details see the `EfxCase`-module.
 
