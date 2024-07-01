@@ -10,7 +10,7 @@ testable code by mocking. Instead of mocking we talk about binding effects to an
 `Efx` offers a declarative way to mark effectful functions and bind them in tests.
 
 Efx allows async testing even in with child-processes, since it uses process-dictionaries
-to store bindings and find them in the super vision tree (see this [test-case](https://github.com/bravobike/efx/blob/improve-doc-example/test/efx_case_test.exs#L52)).
+to store bindings and find them in the supervision-tree (see this [test-case](https://github.com/bravobike/efx/blob/improve-doc-example/test/efx_case_test.exs#L52)).
 
 ## Rationale
 
@@ -140,6 +140,9 @@ For more details, see the `EfxCase`-module.
 
 Note that Efx generates and implements a behavior. Thus, it is recommended, to move side effects to a dedicated submodule, e.g. MyModule.Effects, to not accidentally interfere with existing behaviors.
 
+## OTP Version 25 required
+
+The ancestor-key in process dictionaries is relativly new to Erlang. It was introduced with OTP 25 and, thus, this is the minimal required OTP-version.
 
 ## License
 Copyright © 2024 Bravobike GmbH and Contributors
