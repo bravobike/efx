@@ -10,7 +10,7 @@ testable code by mocking. Instead of mocking we talk about binding effects to an
 `Efx` offers a declarative way to mark effectful functions and bind them in tests.
 
 Efx allows async testing even in with child-processes, since it uses process-dictionaries
-to store bindings and find them in the supervision-tree (see this [test-case](https://github.com/bravobike/efx/blob/improve-doc-example/test/efx_case_test.exs#L52)).
+to store bindings and find them in the supervision-tree (see this [test-case](https://github.com/bravobike/efx/blob/ffe213db51d1b55cf81dd492170d9785284f54c4/test/efx_case_test.exs#L52)).
 
 ## Rationale
 
