@@ -138,7 +138,51 @@ Instead of returning the value of the default implementation, `MyModule.read_fil
 
 For more details, see the `EfxCase`-module.
 
-Note that Efx generates and implements a behavior. Thus, it is recommended, to move side effects to a dedicated submodule, e.g. MyModule.Effects, to not accidentally interfere with existing behaviors.
+Note that Efx generates and implements a behavior. Thus, it is recommended, to move side effects to a dedicated submodule, to not accidentally interfere with existing behaviors.
+That said, we create the following module:
+
+
+```elixir
+defmodule MyModule.Effects do
+
+  use Efx
+
+  @spec read_file!() :: binary()
+  defeffect read_file!() do
+    File.read!("file.txt")
+  end
+
+  @spec write_file!(binary()) :: :ok
+  defeffect write_file!(raw) do
+    File.write!("file.txt", raw)
+  end
+
+end
+```
+
+and straight forward use it in the original module:
+
+```elixir
+defmodule MyModule do
+
+  alias MyModule.Effects
+
+  def read_data() do
+    Effects.read_file!()
+    |> deserialize()
+  end
+
+  def write_data(data) do
+    data
+    |> serialize()
+    |> Effects.write_file!()
+  end
+
+  ...
+end
+```
+
+That way, we achieve a clear separation between effectful and pure code.
 
 ## OTP Version 25 required
 
