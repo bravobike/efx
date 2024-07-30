@@ -118,7 +118,6 @@ defmodule EfxCase do
         end
       end
 
-
   ## Setup for many Tests
 
   If we want to set up the same binding for multiple tests, we can do
@@ -142,6 +141,26 @@ defmodule EfxCase do
         end
       end
 
+
+  ## Setup for all tests at once
+
+  `EfxCase` offers the possiblity to bind effects for all tests in your
+  test-suite once. To do so, we add a call to `ExCase.omnipresent/2` to our
+  `test_helper.exs` and have it executed before tests:
+
+
+      ExUnit.start()
+
+      TestAgent.start_link()
+
+      EfxCase.omnipresent(
+        MyModule,
+        read_file!: fn -> "some meaningful data",
+        write_file!: fn _contents -> :ok end
+      )
+
+
+  We can still override the omnipresent binding selectivly in tests.
 
   ## Explicitly defaulting one Function in Tests
 
