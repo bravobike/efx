@@ -211,7 +211,7 @@ defmodule EfxCase do
           Internal.verify_mocks!(pid)
 
           unless unquote(async?) do
-            MockState.clean_globals()
+            MockState.clean_after_test()
           end
         end)
       end

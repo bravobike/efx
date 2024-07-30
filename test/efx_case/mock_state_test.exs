@@ -49,11 +49,11 @@ defmodule EfxCase.MockStateTest do
     end
   end
 
-  describe "clean_globals/0" do
+  describe "clean after test/0" do
     test "cleans globals as expected" do
       add_fun(pid: :global)
       assert MockState.mocked?(:global, EfxExample)
-      MockState.clean_globals()
+      MockState.clean_after_test()
       refute MockState.mocked?(:global, EfxExample)
     end
   end
