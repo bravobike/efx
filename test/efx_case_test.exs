@@ -30,6 +30,11 @@ defmodule EfxCaseTest do
       assert EfxExample.multi_fun(:a) == :a
     end
 
+    test "on guarded funs" do
+      bind(EfxExample, :guarded_fun, fn arg -> arg end)
+      assert EfxExample.guarded_fun(:a) == :a
+    end
+
     test "works with expected number of calls" do
       bind(EfxExample, :get, fn -> [] end, calls: 1)
       assert EfxExample.get() == []

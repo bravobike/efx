@@ -189,7 +189,7 @@ defmodule Efx do
   end
 
   defmacro defeffect(fun, do_block) do
-    {name, ctx, args} = fun
+    {name, ctx, args} = extract_fun(fun)
     args = ensure_list(args)
     module = __CALLER__.module
 
@@ -237,6 +237,14 @@ defmodule Efx do
         end
       end
     end
+  end
+
+  defp extract_fun({:when, _ctx, [fun, _when_condition]}) do
+    fun
+  end
+
+  defp extract_fun(fun) do
+    fun
   end
 
   @spec spec_name({any(), any(), list()}) :: name :: atom()

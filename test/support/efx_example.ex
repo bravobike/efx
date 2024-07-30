@@ -29,6 +29,24 @@ defmodule EfxCase.EfxExample do
     string
   end
 
+  # we use this to see if functions with guards
+  # work properly at compile time
+  @spec guarded_fun(any()) :: any()
+  defeffect guarded_fun(a) when a in [:a, :b] do
+    {a, :a_or_b}
+  end
+
+  @spec guarded_fun(any()) :: any()
+  defeffect guarded_fun(a) do
+    a
+  end
+
+  # we use this to see if one liners work without getting 
+  # deformed by formatter
+
+  @spec one_liner(any()) :: any()
+  defeffect one_liner(a), do: a
+
   @spec without_parens :: atom
   defeffect without_parens do
     :ok
