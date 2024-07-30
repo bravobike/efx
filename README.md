@@ -37,6 +37,24 @@ Efx follows the following principles:
 
 ## Usage
 
+### Setup
+
+To use `Efx` in your project, add this to your dependencies in `mix.ex`:
+
+```elixir
+{:efx, "~> 0.2.0"}
+```
+
+If you want to have proper formatting of the `Efx.defeffect/2` macro, you can add
+the following line to your `.formatter.ex`:
+
+```elixir
+[
+  ...,
+  import_deps: [:efx]
+]
+```
+
 ### Example
 
 Given the following code:
