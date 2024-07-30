@@ -237,4 +237,10 @@ defmodule EfxCase do
 
     MockState.add_fun(pid, effects_behaviour, key, arity, fun, num)
   end
+
+  def omnipresent(effects_behaviour, stubs \\ []) do
+    Enum.each(stubs, fn {k, v} ->
+      bind(:omnipresent, effects_behaviour, k, v)
+    end)
+  end
 end

@@ -17,19 +17,21 @@ defmodule EfxCase.MockState do
   alias EfxCase.Mock.MockedFun
   use Agent
 
-  @type pid_t :: pid() | :global
+  @typedoc """
+  Defines the scopes of a binding.
+
+  A scope is one of the following
+  - pid: the binding is bound to a pid
+  - global: the binding is bound globally, defined with `async: true`
+  - omnipresent: the binding is omnipresent, that is, defined at test bootstrap
+  """
+  @type scope_t :: pid() | :global | :omnipresent
 
   def start_link(_) do
     Agent.start_link(fn -> %{} end, name: __MODULE__)
   end
 
-  @spec add_fun(module(), atom(), arity(), fun(), non_neg_integer() | nil) :: :ok
-  def add_fun(behaviour, fun_identifier, arity, fun, num_expected_calls) do
-    (ProcessTree.get(:mock_pid) || :global)
-    |> add_fun(behaviour, fun_identifier, arity, fun, num_expected_calls)
-  end
-
-  @spec add_fun(pid_t(), module(), atom(), arity(), fun(), non_neg_integer() | nil) :: :ok
+  @spec add_fun(scope_t(), module(), atom(), arity(), fun(), non_neg_integer() | nil) :: :ok
   def add_fun(pid, behaviour, fun_identifier, arity, fun, num_expected_calls) do
     Agent.update(__MODULE__, fn state ->
       pid_state = get_or_init_state(state, pid)
@@ -53,20 +55,20 @@ defmodule EfxCase.MockState do
 
   @spec call(module(), atom(), list(any())) :: function_return :: any()
   def call(behaviour, fun_identifier, args) do
-    (ProcessTree.get(:mock_pid) || :global)
+    ProcessTree.get(:mock_pid)
     |> call(behaviour, fun_identifier, args)
   end
 
-  @spec call(pid_t(), module(), atom(), list(any())) :: function_return :: any()
+  @spec call(scope_t() | nil, module(), atom(), list(any())) :: function_return :: any()
   def call(pid, behaviour, fun_identifier, args) do
     fun =
       Agent.get_and_update(__MODULE__, fn state ->
-        with {:ok, pid_state} <- get_from_agent_state(state, pid),
+        with {:ok, pid_state, scope} <- get_from_agent_state(state, pid),
              {:ok, mock} <- get_from_pid_state(pid_state, behaviour) do
           ret = Mock.get_fun(mock, fun_identifier, Enum.count(args))
           new_mock = Mock.inc_called(mock, fun_identifier, Enum.count(args))
           new_pid_state = Map.put(pid_state, behaviour, new_mock)
-          {ret, Map.put(state, pid, new_pid_state)}
+          {ret, Map.put(state, scope, new_pid_state)}
         else
           {:error, _} -> raise "no mock found for #{inspect(behaviour)} in pid #{inspect(pid)}"
         end
@@ -87,7 +89,7 @@ defmodule EfxCase.MockState do
     |> mocked?(behaviour)
   end
 
-  @spec mocked?(pid_t(), module()) :: boolean()
+  @spec mocked?(scope_t(), module()) :: boolean()
   def mocked?(pid, behaviour) do
     mocks = get_from_agent(pid) || %{}
     Map.has_key?(mocks, behaviour)
@@ -99,7 +101,7 @@ defmodule EfxCase.MockState do
     |> verify_called!()
   end
 
-  @spec verify_called!(pid_t()) :: no_return() | nil | :ok
+  @spec verify_called!(scope_t()) :: no_return() | nil | :ok
   def verify_called!(pid) do
     mocks = get_from_agent(pid)
 
@@ -119,7 +121,7 @@ defmodule EfxCase.MockState do
     Agent.update(__MODULE__, &Map.delete(&1, :global))
   end
 
-  @spec get_or_init_state(map(), pid_t()) :: map()
+  @spec get_or_init_state(map(), scope_t()) :: map()
   defp get_or_init_state(state, pid) do
     Map.get(state, pid, %{})
   end
@@ -129,21 +131,24 @@ defmodule EfxCase.MockState do
     Map.get(state, behaviour, Mock.make(behaviour))
   end
 
-  @spec get_from_agent(pid_t()) :: map() | nil
+  @spec get_from_agent(scope_t()) :: map() | nil
   defp get_from_agent(pid) do
-    Agent.get(__MODULE__, &Map.get(&1, pid)) || Agent.get(__MODULE__, &Map.get(&1, :global))
+    Agent.get(__MODULE__, &Map.get(&1, pid)) || Agent.get(__MODULE__, &Map.get(&1, :global)) ||
+      Agent.get(__MODULE__, &Map.get(&1, :omnipresent))
   end
 
-  @spec get_from_agent_state(map(), pid() | :global) ::
-          {:ok, Mock.t()} | {:error, :not_in_pid_lookup}
+  @spec get_from_agent_state(map(), scope_t()) ::
+          {:ok, Mock.t(), scope_t()} | {:error, :not_in_pid_lookup}
   defp get_from_agent_state(state, pid) do
-    case Map.get(state, pid, Map.get(state, :global)) do
-      nil -> {:error, :not_in_pid_lookup}
-      something -> {:ok, something}
+    cond do
+      pid_state = Map.get(state, pid) -> {:ok, pid_state, pid}
+      global_state = Map.get(state, :global) -> {:ok, global_state, :global}
+      omnipresent_state = Map.get(state, :omnipresent) -> {:ok, omnipresent_state, :omnipresent}
+      true -> {:error, :not_in_pid_lookup}
     end
   end
 
-  @spec get_from_agent_state(map(), pid() | :global) :: {:ok, map()} | {:error, :not_in_pid_state}
+  @spec get_from_pid_state(map(), module()) :: {:ok, map()} | {:error, :not_in_pid_state}
   defp get_from_pid_state(state, behaviour) do
     case Map.get(state, behaviour) do
       nil -> {:error, :not_in_pid_state}
