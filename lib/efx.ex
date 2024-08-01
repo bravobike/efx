@@ -161,6 +161,7 @@ defmodule Efx do
     effect_impls =
       Module.get_attribute(caller, :effect_impls, [])
       |> Enum.map(fn {_, _, impl} -> impl end)
+      |> Enum.reverse()
 
     specs = Module.get_attribute(caller, :spec, [])
 
@@ -199,7 +200,7 @@ defmodule Efx do
 
     Module.put_attribute(module, :effects, {name, Enum.count(args)})
     impl_name = :"__#{name}"
-    impl_fun = {impl_name, ctx, args}
+    impl_fun = substitute_name(fun, impl_name)
 
     impl =
       quote do
@@ -239,13 +240,13 @@ defmodule Efx do
     end
   end
 
-  defp extract_fun({:when, _ctx, [fun, _when_condition]}) do
-    fun
-  end
+  defp extract_fun({:when, _ctx, [fun, _when_condition]}), do: fun
+  defp extract_fun(fun), do: fun
 
-  defp extract_fun(fun) do
-    fun
-  end
+  defp substitute_name({:when, ctx, [fun, condition]}, new_name),
+    do: {:when, ctx, [substitute_name(fun, new_name), condition]}
+
+  defp substitute_name({_name, ctx, args}, new_name), do: {new_name, ctx, args}
 
   @spec spec_name({any(), any(), list()}) :: name :: atom()
   defp spec_name({_, _, a}) do

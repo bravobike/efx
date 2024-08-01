@@ -9,6 +9,16 @@ defmodule EfxCaseTest do
       assert EfxExample.get() == [1, 2, 3, 4, 5]
       assert EfxExample.append_get(6) == [1, 2, 3, 4, 5, 6]
     end
+
+    test "guarded funs work properly" do
+      assert EfxExample.guarded_fun(:a) == :a_or_b
+      assert EfxExample.guarded_fun(:c) == :c
+    end
+
+    test "multi funs work properly" do
+      assert EfxExample.multi_fun([]) == :empty_list
+      assert EfxExample.multi_fun(:c) == :c
+    end
   end
 
   describe "binding effects" do

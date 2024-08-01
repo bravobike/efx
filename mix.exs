@@ -1,7 +1,7 @@
 defmodule Efx.MixProject do
   use Mix.Project
 
-  @version "0.2.2"
+  @version "0.2.3"
   @github_page "https://github.com/bravobike/efx"
 
   def project do

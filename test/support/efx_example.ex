@@ -21,19 +21,19 @@ defmodule EfxCase.EfxExample do
   # we use this to see if functions with multiple
   # implementations work properly at compile time
   @spec multi_fun(any()) :: list()
-  defeffect multi_fun([] = list) do
-    list
+  defeffect multi_fun([]) do
+    :empty_list
   end
 
-  defeffect multi_fun(string) do
-    string
+  defeffect multi_fun(other) do
+    other
   end
 
   # we use this to see if functions with guards
   # work properly at compile time
   @spec guarded_fun(any()) :: any()
   defeffect guarded_fun(a) when a in [:a, :b] do
-    {a, :a_or_b}
+    :a_or_b
   end
 
   @spec guarded_fun(any()) :: any()
