@@ -204,9 +204,7 @@ defmodule Efx do
 
     impl =
       quote do
-        def unquote(impl_fun) do
-          unquote(Keyword.get(do_block, :do))
-        end
+        def unquote_splicing([impl_fun, do_block])
       end
 
     # we store the implementations here to put them all together in the end
@@ -233,9 +231,7 @@ defmodule Efx do
     else
       quote do
         @impl unquote(module)
-        def unquote(fun) do
-          unquote(Keyword.get(do_block, :do))
-        end
+        def unquote_splicing([fun, do_block])
       end
     end
   end
