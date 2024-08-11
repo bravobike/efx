@@ -156,6 +156,8 @@ Instead of returning the value of the default implementation, `MyModule.read_fil
 
 For more details, see the `EfxCase`-module.
 
+### Caution: Efx generates a behaviour
+
 Note that Efx generates and implements a behavior. Thus, it is recommended, to move side effects to a dedicated submodule, to not accidentally interfere with existing behaviors.
 That said, we create the following module:
 
@@ -201,6 +203,19 @@ end
 ```
 
 That way, we achieve a clear separation between effectful and pure code.
+
+### Delegate Effects
+
+The same way we use `&Efx.defdelegate/2` we can implement effect functions to just delegate to another function like so: 
+
+```elixir
+@spec to_atom(String.t()) :: atom()
+delegateeffect to_atom(str), to: String
+```
+
+`delegateeffect` follows the same syntax as `&Kernel.defdelegate/2`.
+Functions defined using `defdelegate` are bindable in tests like they were created using `defeffect`.
+
 
 ## OTP Version 25 required
 

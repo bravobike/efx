@@ -19,6 +19,11 @@ defmodule EfxCaseTest do
       assert EfxExample.multi_fun([]) == :empty_list
       assert EfxExample.multi_fun(:c) == :c
     end
+
+    test "delegateeffect works properly" do
+      assert EfxExample.to_atom("hello") == :hello
+      assert EfxExample.to_schmatom("hello") == :hello
+    end
   end
 
   describe "binding effects" do
@@ -62,6 +67,14 @@ defmodule EfxCaseTest do
 
       assert EfxExample.get() == []
       assert EfxExample.append_get(6) == [1, 2, 3, 4, 5, 6]
+    end
+
+    test "works for delegates" do
+      bind(EfxExample, :to_atom, fn _ -> :my_atom end)
+      bind(EfxExample, :to_schmatom, fn _ -> :my_schmatom end)
+
+      assert EfxExample.to_atom("hello") == :my_atom
+      assert EfxExample.to_schmatom("hello") == :my_schmatom
     end
 
     test "works in child processes" do

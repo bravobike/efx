@@ -129,7 +129,58 @@ defmodule Efx do
 
   For more details, see the `EfxCase`-module.
 
-  Note that Efx generates and implements a behavior. Thus, it is recommended, to move side effects to a dedicated submodule, e.g. MyModule.Effects, to not accidentally interfere with existing behaviors.
+  ### Caution: Efx generates a behaviour
+
+  Note that Efx generates and implements a behavior. Thus, it is recommended, to move side effects to a dedicated submodule, to not accidentally interfere with existing behaviors.
+  That said, we create the following module:
+
+      defmodule MyModule.Effects do
+
+        use Efx
+
+        @spec read_file!() :: binary()
+        defeffect read_file!() do
+          File.read!("file.txt")
+        end
+
+        @spec write_file!(binary()) :: :ok
+        defeffect write_file!(raw) do
+          File.write!("file.txt", raw)
+        end
+
+      end
+
+  and straight forward use it in the original module:
+
+      defmodule MyModule do
+
+        alias MyModule.Effects
+
+        def read_data() do
+          Effects.read_file!()
+          |> deserialize()
+        end
+
+        def write_data(data) do
+          data
+          |> serialize()
+          |> Effects.write_file!()
+        end
+
+      ...
+      end
+
+  That way, we achieve a clear separation between effectful and pure code.
+
+  ### Delegate Effects
+
+  The same way we use `&Efx.defdelegate/2` we can implement effect functions to just delegate to another function like so: 
+
+      @spec to_atom(String.t()) :: atom()
+      delegateeffect to_atom(str), to: String
+
+  `delegateeffect` follows the same syntax as `&Kernel.defdelegate/2`.
+  Functions defined using `defdelegate` are bindable in tests like they were created using `defeffect`.
 
   """
 
@@ -190,49 +241,115 @@ defmodule Efx do
   end
 
   defmacro defeffect(fun, do_block) do
-    {name, ctx, args} = extract_fun(fun)
-    args = ensure_list(args)
+    {name, _ctx, _args} = extract_fun(fun)
     module = __CALLER__.module
 
-    # we do this to not get warnings for wildcard params in functions
-    alt_args = Macro.generate_arguments(Enum.count(args), module)
-    alt_fun = {name, ctx, alt_args}
+    alternative_fun_header = make_alternative_fun_header(fun, module)
 
-    Module.put_attribute(module, :effects, {name, Enum.count(args)})
-    impl_name = :"__#{name}"
-    impl_fun = substitute_name(fun, impl_name)
+    register_effect(fun, module)
+
+    impl_fun = make_implementation_fun_header(fun)
 
     impl =
       quote do
         def unquote_splicing([impl_fun, do_block])
       end
 
+    real_impl =
+      quote do
+        @impl unquote(module)
+        def unquote_splicing([fun, do_block])
+      end
+
+    generate_effect(module, name, alternative_fun_header, impl_fun, impl, real_impl)
+  end
+
+  defmacro delegateeffect(fun, opts) do
+    {name, _ctx, args} = fun
+    args = ensure_list(args)
+    module = __CALLER__.module
+
+    register_effect(fun, module)
+
+    alternative_fun_header = make_alternative_fun_header(fun, module)
+    impl_fun = make_implementation_fun_header(fun)
+
+    to = Keyword.fetch!(opts, :to)
+    as = Keyword.get(opts, :as, name)
+
+    impl =
+      quote do
+        def unquote(impl_fun) do
+          Kernel.apply(unquote(to), unquote(as), unquote(args))
+        end
+      end
+
+    real_impl =
+      quote do
+        @impl unquote(module)
+        defdelegate(unquote_splicing([fun, opts]))
+      end
+
+    generate_effect(module, name, alternative_fun_header, impl_fun, impl, real_impl)
+  end
+
+  defp make_alternative_fun_header(fun, module) do
+    {name, ctx, args} = extract_fun(fun)
+    args = ensure_list(args)
+    # we do this to not get warnings for wildcard params in functions
+    alt_args = Macro.generate_arguments(Enum.count(args), module)
+    {name, ctx, alt_args}
+  end
+
+  defp make_implementation_fun_header(fun) do
+    {name, _ctx, _args} = extract_fun(fun)
+    impl_name = :"__#{name}"
+    substitute_name(fun, impl_name)
+  end
+
+  def register_effect(fun, module) do
+    {name, _ctx, args} = extract_fun(fun)
+    args = ensure_list(args)
+    Module.put_attribute(module, :effects, {name, Enum.count(args)})
+  end
+
+  defp generate_effect(
+         module,
+         name,
+         alternative_fun_header,
+         implementation_fun_header,
+         impl,
+         real_fun
+       ) do
+    {_name, _ctx, alt_args} = extract_fun(alternative_fun_header)
+    {implementation_name, _ctx, _alt_args} = extract_fun(implementation_fun_header)
+
     # we store the implementations here to put them all together in the end
     # to avoid warnings about non grouped definitions of the same function
-    arity = Enum.count(args)
+    arity = Enum.count(alt_args)
 
     already_exists? = already_exists?(module, name, arity)
 
-    Module.put_attribute(module, :effect_impls, {name, Enum.count(args), impl})
+    Module.put_attribute(module, :effect_impls, {name, arity, impl})
 
     if Mix.env() == :test do
       unless already_exists? do
+        # we generate a function that checks if the function is mocked and
+        # if not we call the default implementation we moved to an alternative
+        # implementation function
         quote do
           @impl unquote(module)
-          def unquote(alt_fun) do
+          def unquote(alternative_fun_header) do
             if EfxCase.MockState.mocked?(unquote(module)) do
               EfxCase.MockState.call(unquote(module), unquote(name), unquote(alt_args))
             else
-              Kernel.apply(__MODULE__, unquote(impl_name), unquote(alt_args))
+              Kernel.apply(__MODULE__, unquote(implementation_name), unquote(alt_args))
             end
           end
         end
       end
     else
-      quote do
-        @impl unquote(module)
-        def unquote_splicing([fun, do_block])
-      end
+      real_fun
     end
   end
 

@@ -51,4 +51,10 @@ defmodule EfxCase.EfxExample do
   defeffect without_parens do
     :ok
   end
+
+  @spec to_atom(String.t()) :: atom()
+  delegateeffect to_atom(a), to: String
+
+  @spec to_schmatom(String.t()) :: atom()
+  delegateeffect to_schmatom(a), to: String, as: :to_atom
 end
