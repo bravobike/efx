@@ -174,12 +174,12 @@ defmodule Efx do
 
   ### Delegate Effects
 
-  The same way we use `&Efx.defdelegate/2` we can implement effect functions to just delegate to another function like so: 
+  The same way we use `Kernel.defdelegate/2` we can implement effect functions that just delegate to another function like so: 
 
       @spec to_atom(String.t()) :: atom()
       delegateeffect to_atom(str), to: String
 
-  `delegateeffect` follows the same syntax as `&Kernel.defdelegate/2`.
+  `delegateeffect` follows the same syntax as `Kernel.defdelegate/2`.
   Functions defined using `defdelegate` are bindable in tests like they were created using `defeffect`.
 
   """
