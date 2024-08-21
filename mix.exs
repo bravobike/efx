@@ -1,7 +1,7 @@
 defmodule Efx.MixProject do
   use Mix.Project
 
-  @version "0.2.6"
+  @version "0.2.7"
   @github_page "https://github.com/bravobike/efx"
 
   def project do
@@ -56,7 +56,7 @@ defmodule Efx.MixProject do
 
   defp package do
     [
-      files: ~w(mix.exs README.md lib),
+      files: ~w(mix.exs README.md lib .formatter.exs),
       licenses: ["Apache-2.0"],
       links: %{
         "GitHub" => @github_page

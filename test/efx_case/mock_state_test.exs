@@ -42,7 +42,7 @@ defmodule EfxCase.MockStateTest do
     end
 
     test "raises if if unsatisfied" do
-      assert_raise(RuntimeError, fn ->
+      assert_raise(ExUnit.AssertionError, fn ->
         add_fun(num_expected_calls: 1)
         MockState.verify_called!(self())
       end)

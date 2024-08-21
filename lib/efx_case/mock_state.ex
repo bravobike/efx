@@ -13,8 +13,12 @@ defmodule EfxCase.MockState do
   invocations as well as store mocks as global when a test is flagged as
   async.
   """
+  alias ExUnit.Assertions
   alias EfxCase.Mock
   alias EfxCase.Mock.MockedFun
+
+  require ExUnit.Assertions
+
   use Agent
 
   @typedoc """
@@ -44,7 +48,9 @@ defmodule EfxCase.MockState do
             mock
 
           {:error, :function_not_in_mock} ->
-            raise "Not matching function found for #{behaviour}: #{fun_identifier}/#{arity}"
+            Assertions.flunk(
+              "Not matching function found for #{behaviour}: #{fun_identifier}/#{arity}"
+            )
         end
 
       new_pid_state = Map.put(pid_state, behaviour, new_mock)
@@ -70,7 +76,9 @@ defmodule EfxCase.MockState do
           {ret, Map.put(state, scope, new_pid_state)}
         else
           {:error, _err} ->
-            raise "no mock found for #{inspect(behaviour)}/#{inspect(fun_identifier)} in scope #{inspect(pid)} with state #{inspect(state)}"
+            Assertions.flunk(
+              "no mock found for #{inspect(behaviour)}/#{inspect(fun_identifier)} in scope #{inspect(pid)} with state #{inspect(state)}"
+            )
         end
       end)
 
@@ -115,7 +123,9 @@ defmodule EfxCase.MockState do
         unsatisfied = Mock.get_unsatisfied(mock)
 
         unless Enum.empty?(unsatisfied) do
-          raise "expectations for #{inspect(behaviour)} were not meat: \n #{parse(unsatisfied)}"
+          Assertions.flunk(
+            "expectations for #{inspect(behaviour)} were not met: \n #{parse(unsatisfied)}"
+          )
         end
       end)
     end

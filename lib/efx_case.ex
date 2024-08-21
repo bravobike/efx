@@ -208,10 +208,15 @@ defmodule EfxCase do
         Internal.init(pid)
 
         on_exit(fn ->
-          Internal.verify_mocks!(pid)
+          res = Internal.verify_mocks(pid)
 
           unless unquote(async?) do
             MockState.clean_after_test()
+          end
+
+          case res do
+            :ok -> :ok
+            {:error, error} -> raise error
           end
         end)
       end
