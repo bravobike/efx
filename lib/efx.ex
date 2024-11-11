@@ -196,7 +196,6 @@ defmodule Efx do
       import Efx
 
       @before_compile unquote(__MODULE__)
-      @behaviour __MODULE__
 
       def __config_root(), do: unquote(config_root)
       def __config_key(), do: unquote(config_key)
