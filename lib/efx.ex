@@ -257,7 +257,6 @@ defmodule Efx do
 
     real_impl =
       quote do
-        @impl unquote(module)
         def unquote_splicing([fun, do_block])
       end
 
@@ -286,7 +285,6 @@ defmodule Efx do
 
     real_impl =
       quote do
-        @impl unquote(module)
         defdelegate(unquote_splicing([fun, opts]))
       end
 
@@ -338,7 +336,6 @@ defmodule Efx do
         # if not we call the default implementation we moved to an alternative
         # implementation function
         quote do
-          @impl unquote(module)
           def unquote(alternative_fun_header) do
             if EfxCase.MockState.mocked?(unquote(module)) do
               EfxCase.MockState.call(unquote(module), unquote(name), unquote(alt_args))
