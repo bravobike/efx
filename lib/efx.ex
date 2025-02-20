@@ -329,7 +329,7 @@ defmodule Efx do
 
     Module.put_attribute(module, :effect_impls, {name, arity, impl})
 
-    if Mix.env() == :test do
+    if in_test?() do
       unless already_exists? do
         # we generate a function that checks if the function is mocked and
         # if not we call the default implementation we moved to an alternative
@@ -382,4 +382,8 @@ defmodule Efx do
   @spec ensure_list(list() | nil) :: list()
   defp ensure_list(nil), do: []
   defp ensure_list(list), do: list
+
+  defp in_test?() do
+    Code.ensure_loaded?(Mix) && Mix.env() == :test
+  end
 end
