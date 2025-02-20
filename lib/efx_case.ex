@@ -184,6 +184,19 @@ defmodule EfxCase do
   (when called), we can tell `Efx` to use it's
   default implementation. Note that when default, we have to provide the arity of the function.
   It can be combined with an expected number of calls.
+
+  ## Testing with clean bindings
+
+  Sometimes (e.g. in property based tests, which run in one process) we wan't
+  to have fresh bindings for each iteration. To achieve that we can run the
+  tests as follows:
+
+      check all data <- my_generator do 
+        with_clean_bindings(fn ->
+          # implement bindings here
+          ...
+        )
+      end
   """
 
   require Logger
@@ -207,18 +220,7 @@ defmodule EfxCase do
 
         Internal.init(pid)
 
-        on_exit(fn ->
-          res = Internal.verify_mocks(pid)
-
-          unless unquote(async?) do
-            MockState.clean_after_test()
-          end
-
-          case res do
-            :ok -> :ok
-            {:error, error} -> raise error
-          end
-        end)
+        on_exit(clean_up(pid))
       end
 
       defp bind(effects_behaviour, key, fun, opts \\ []) do
@@ -232,6 +234,25 @@ defmodule EfxCase do
           end
 
         EfxCase.bind(pid, effects_behaviour, key, num, fun)
+      end
+
+      defp with_clean_bindings(foo) do
+        clean_up(self()).()
+        foo.()
+        clean_up(self()).()
+      end
+
+      defp clean_up(pid) do
+        fn ->
+          res = Internal.verify_mocks(pid)
+
+          MockState.clean_after_test()
+
+          case res do
+            :ok -> :ok
+            {:error, error} -> raise error
+          end
+        end
       end
 
       import EfxCase, only: [setup_effects: 2]

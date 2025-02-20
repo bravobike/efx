@@ -96,4 +96,16 @@ defmodule EfxCaseTest do
       assert [1, 2, 3, 4, 5] = TestAgent.get()
     end
   end
+
+  describe "with_clean_bindings/1" do
+    test "cleans bindings withing a test" do
+      bind(EfxExample, :get, fn -> [] end)
+      assert EfxExample.get() == []
+
+      with_clean_bindings(fn ->
+        bind(EfxExample, :get, fn -> 1 end)
+        assert EfxExample.get() == 1
+      end)
+    end
+  end
 end
