@@ -42,7 +42,7 @@ Efx follows the following principles:
 To use `Efx` in your project, add this to your dependencies in `mix.ex`:
 
 ```elixir
-{:efx, "~> 0.2.9"}
+{:efx, "~> 0.2.10"}
 ```
 
 If you want to have proper formatting of the `Efx.defeffect/2` macro, you can add
