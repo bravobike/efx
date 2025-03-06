@@ -1,7 +1,7 @@
 defmodule Efx.MixProject do
   use Mix.Project
 
-  @version "0.2.9"
+  @version "0.2.10"
   @github_page "https://github.com/bravobike/efx"
 
   def project do
@@ -40,7 +40,7 @@ defmodule Efx.MixProject do
     [
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:typed_struct, "~> 0.3.0"},
-      {:process_tree, "0.1.2"}
+      {:process_tree, "0.2.1"}
     ]
   end
 
