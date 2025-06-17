@@ -83,22 +83,10 @@ defmodule EfxCase.Mock do
     end
   end
 
-  @spec get_fun(Mock.t(), atom(), arity()) :: no_return() | fun() | :default | :unmocked
+  @spec get_fun(Mock.t(), atom(), arity()) ::
+          {:ok, MockedFun.t()} | {:error, :unmocked} | {:error, :exhausted} | {:error, :not_found}
   def get_fun(mock, name, arity) do
     get_next_mocked_fun(mock.mocked_funs, name, arity)
-    |> case do
-      {:error, :not_found} ->
-        raise "No mocked functions found for #{name}/#{arity}"
-
-      {:error, :exhausted} ->
-        raise "The number of expected calls is exceeded for #{name}/#{arity}"
-
-      {:error, :unmocked} ->
-        raise "Mock for function #{name}/#{arity} missing"
-
-      {:ok, mocked_fun} ->
-        mocked_fun.impl
-    end
   end
 
   @spec get_unsatisfied(Mock.t()) :: list(MockedFun.t())

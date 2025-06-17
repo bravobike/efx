@@ -13,9 +13,9 @@ defmodule EfxCase.MockState do
   invocations as well as store mocks as global when a test is flagged as
   async.
   """
-  alias ExUnit.Assertions
   alias EfxCase.Mock
   alias EfxCase.Mock.MockedFun
+  alias ExUnit.Assertions
 
   require ExUnit.Assertions
 
@@ -37,26 +37,27 @@ defmodule EfxCase.MockState do
 
   @spec add_fun(scope_t(), module(), atom(), arity(), fun(), non_neg_integer() | nil) :: :ok
   def add_fun(pid, behaviour, fun_identifier, arity, fun, num_expected_calls) do
-    Agent.update(__MODULE__, fn state ->
-      pid_state = get_or_init_state(state, pid)
+    result =
+      Agent.get_and_update(__MODULE__, fn state ->
+        pid_state = get_or_init_state(state, pid)
 
-      new_mock =
         get_or_init_mock(pid_state, behaviour)
         |> Mock.add_fun(fun_identifier, arity, fun, num_expected_calls)
         |> case do
-          {:ok, mock} ->
-            mock
+          {:ok, new_mock} ->
+            new_pid_state = Map.put(pid_state, behaviour, new_mock)
+            {:ok, Map.put(state, pid, new_pid_state)}
 
-          {:error, :function_not_in_mock} ->
-            Assertions.flunk(
-              "Not matching function found for #{behaviour}: #{fun_identifier}/#{arity}"
-            )
+          {:error, :function_not_in_mock} = err ->
+            {err, state}
         end
+      end)
 
-      new_pid_state = Map.put(pid_state, behaviour, new_mock)
+    if result == {:error, :function_not_in_mock} do
+      Assertions.flunk("Not matching function found for #{behaviour}: #{fun_identifier}/#{arity}")
+    end
 
-      Map.put(state, pid, new_pid_state)
-    end)
+    :ok
   end
 
   @spec call(module(), atom(), list(any())) :: function_return :: any()
@@ -67,27 +68,42 @@ defmodule EfxCase.MockState do
 
   @spec call(scope_t() | nil, module(), atom(), list(any())) :: function_return :: any()
   def call(pid, behaviour, fun_identifier, args) do
+    arity = Enum.count(args)
+
     fun =
       Agent.get_and_update(__MODULE__, fn state ->
-        with {:ok, mock, scope_state, scope} <- get_from_agent_state(state, pid, behaviour) do
-          ret = Mock.get_fun(mock, fun_identifier, Enum.count(args))
-          new_mock = Mock.inc_called(mock, fun_identifier, Enum.count(args))
+        with {:ok, mock, scope_state, scope} <- get_from_agent_state(state, pid, behaviour),
+             {:ok, foo} <- Mock.get_fun(mock, fun_identifier, arity) do
+          new_mock = Mock.inc_called(mock, fun_identifier, arity)
           new_pid_state = Map.put(scope_state, behaviour, new_mock)
-          {ret, Map.put(state, scope, new_pid_state)}
+          {{:ok, foo.impl}, Map.put(state, scope, new_pid_state)}
         else
-          {:error, _err} ->
-            Assertions.flunk(
-              "no mock found for #{inspect(behaviour)}/#{inspect(fun_identifier)} in scope #{inspect(pid)} with state #{inspect(state)}"
-            )
+          {:error, _} = err ->
+            {err, state}
         end
       end)
 
     case fun do
-      :default ->
+      {:ok, :default} ->
         Kernel.apply(behaviour, :"__#{fun_identifier}", args)
 
-      fun ->
+      {:ok, fun} ->
         Kernel.apply(fun, args)
+
+      {:error, :not_found} ->
+        Assertions.flunk(
+          "no binding found for #{inspect(behaviour)}.#{Atom.to_string(fun_identifier)}/#{arity} in scope #{inspect(pid)}"
+        )
+
+      {:error, :unmocked} ->
+        Assertions.flunk(
+          "no binding found for #{inspect(behaviour)}.#{Atom.to_string(fun_identifier)}/#{arity} in scope #{inspect(pid)}"
+        )
+
+      {:error, :exhausted} ->
+        Assertions.flunk(
+          "The number of expected calls is exceeded for #{inspect(behaviour)}.#{Atom.to_string(fun_identifier)}/#{arity} in scope #{inspect(pid)}"
+        )
     end
   end
 

@@ -3,6 +3,24 @@ defmodule EfxCaseTest do
   use ExUnit.Case
 
   alias EfxCase.EfxExample
+  alias ExUnit.AssertionError
+
+  describe "binding a non existing function" do
+    test "raises but is handled gracefully" do
+      assert_raise(AssertionError, fn ->
+        bind(EfxExample, :i_dont_exist, fn -> "missigno" end)
+      end)
+    end
+  end
+
+  describe "calling an unbound function" do
+    test "raises but is handled gracefully" do
+      assert_raise(AssertionError, fn ->
+        bind(EfxExample, :get, fn -> [] end)
+        assert EfxExample.append_get(1) == [1]
+      end)
+    end
+  end
 
   describe "without binding effect" do
     test "defaults are executed" do
