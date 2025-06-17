@@ -57,4 +57,11 @@ defmodule EfxCase.EfxExample do
 
   @spec to_schmatom(String.t()) :: atom()
   delegateeffect to_schmatom(a), to: String, as: :to_atom
+
+  @spec with_default_args() :: String.t()
+  @spec with_default_args(String.t()) :: String.t()
+  @spec with_default_args(String.t(), String.t()) :: String.t()
+  defeffect with_default_args(name \\ "user 123", greeting \\ "Hello") do
+    greeting <> " " <> name
+  end
 end

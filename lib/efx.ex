@@ -190,7 +190,6 @@ defmodule Efx do
     config_key = Keyword.get(opts, :config_key, caller)
 
     Module.register_attribute(caller, :effects, accumulate: true)
-    Module.register_attribute(caller, :effect_impls, accumulate: true)
 
     quote do
       import Efx
@@ -209,32 +208,33 @@ defmodule Efx do
     effects = Module.get_attribute(caller, :effects, [])
 
     effect_impls =
-      Module.get_attribute(caller, :effect_impls, [])
+      effects
       |> Enum.map(fn {_, _, impl} -> impl end)
       |> Enum.reverse()
 
     specs = Module.get_attribute(caller, :spec, [])
 
     Module.delete_attribute(caller, :effects)
-    Module.delete_attribute(caller, :effect_impls)
 
     # the following code searches for the effects, collected in
     # the module attribute `@effects`, finds the specs for the
     # effect functions and implements callbacks for them.
     # Raises if there are no specs founds.
-    Enum.map(effects, fn {effect, arity} ->
-      Enum.find(specs, fn {:spec, spec, _} ->
-        spec_arity(spec) == arity && spec_name(spec) == effect
-      end)
-      |> case do
-        {:spec, spec, _} ->
-          quote do
-            @callback unquote(spec)
-          end
+    Enum.flat_map(effects, fn {effect, arities, _impl} ->
+      Enum.map(arities, fn arity ->
+        Enum.find(specs, fn {:spec, spec, _} ->
+          spec_arity(spec) == arity && spec_name(spec) == effect
+        end)
+        |> case do
+          {:spec, spec, _} ->
+            quote do
+              @callback unquote(spec)
+            end
 
-        nil ->
-          raise "No spec for effect found: #{effect}"
-      end
+          nil ->
+            raise "No spec for effect found: #{effect}/#{arity}"
+        end
+      end)
     end) ++
       effect_impls
   end
@@ -244,8 +244,6 @@ defmodule Efx do
     module = __CALLER__.module
 
     alternative_fun_header = make_alternative_fun_header(fun, module)
-
-    register_effect(fun, module)
 
     impl_fun = make_implementation_fun_header(fun)
 
@@ -266,8 +264,6 @@ defmodule Efx do
     {name, _ctx, args} = fun
     args = ensure_list(args)
     module = __CALLER__.module
-
-    register_effect(fun, module)
 
     alternative_fun_header = make_alternative_fun_header(fun, module)
     impl_fun = make_implementation_fun_header(fun)
@@ -294,20 +290,25 @@ defmodule Efx do
     {name, ctx, args} = extract_fun(fun)
     args = ensure_list(args)
     # we do this to not get warnings for wildcard params in functions
-    alt_args = Macro.generate_arguments(Enum.count(args), module)
+    alt_args = make_alt_args(args, module)
     {name, ctx, alt_args}
+  end
+
+  defp make_alt_args(args, module) do
+    Macro.generate_arguments(Enum.count(args), module)
+    |> Enum.zip(args)
+    |> Enum.map(fn {alt_arg, arg} ->
+      case arg do
+        {:\\, context, [_original_arg, default]} -> {:\\, context, [alt_arg, default]}
+        _ -> alt_arg
+      end
+    end)
   end
 
   defp make_implementation_fun_header(fun) do
     {name, _ctx, _args} = extract_fun(fun)
     impl_name = :"__#{name}"
     substitute_name(fun, impl_name)
-  end
-
-  def register_effect(fun, module) do
-    {name, _ctx, args} = extract_fun(fun)
-    args = ensure_list(args)
-    Module.put_attribute(module, :effects, {name, Enum.count(args)})
   end
 
   defp generate_effect(
@@ -318,7 +319,8 @@ defmodule Efx do
          impl,
          real_fun
        ) do
-    {_name, _ctx, alt_args} = extract_fun(alternative_fun_header)
+    {_name, _ctx, alt_args_with_defaults} = extract_fun(alternative_fun_header)
+    alt_args = remove_defaults(alt_args_with_defaults)
     {implementation_name, _ctx, _alt_args} = extract_fun(implementation_fun_header)
 
     # we store the implementations here to put them all together in the end
@@ -327,19 +329,28 @@ defmodule Efx do
 
     already_exists? = already_exists?(module, name, arity)
 
-    Module.put_attribute(module, :effect_impls, {name, arity, impl})
+    register_effect(module, name, alt_args_with_defaults, impl)
 
     if in_test?() do
       unless already_exists? do
         # we generate a function that checks if the function is mocked and
         # if not we call the default implementation we moved to an alternative
         # implementation function
-        quote do
-          def unquote(alternative_fun_header) do
-            if EfxCase.MockState.mocked?(unquote(module)) do
-              EfxCase.MockState.call(unquote(module), unquote(name), unquote(alt_args))
-            else
-              Kernel.apply(__MODULE__, unquote(implementation_name), unquote(alt_args))
+        num_alt_args = Enum.count(alt_args)
+        num_alt_args_with_defaults = Enum.count(alt_args_with_defaults)
+
+        for i <- num_alt_args..num_alt_args_with_defaults do
+          num_to_cutoff = i - num_alt_args
+          fun_header = cutoff_defaults_from_fun_header(alternative_fun_header, num_to_cutoff)
+          args = cutoff_defaults_from_args(alt_args_with_defaults, num_to_cutoff)
+
+          quote do
+            def unquote(fun_header) do
+              if EfxCase.MockState.mocked?(unquote(module)) do
+                EfxCase.MockState.call(unquote(module), unquote(name), unquote(args))
+              else
+                Kernel.apply(__MODULE__, unquote(implementation_name), unquote(args))
+              end
             end
           end
         end
@@ -347,6 +358,65 @@ defmodule Efx do
     else
       real_fun
     end
+  end
+
+  defp cutoff_defaults_from_fun_header(fun_header, num_to_cutoff) do
+    {name, context, args} = fun_header
+
+    new_args =
+      cutoff_defaults_from_args(args, num_to_cutoff)
+      |> undefault()
+
+    {name, context, new_args}
+  end
+
+  defp cutoff_defaults_from_args(args, num_to_cutoff) do
+    if num_to_cutoff == 0 do
+      args
+      |> undefault()
+    else
+      new_args = remove_next_default(args)
+      cutoff_defaults_from_args(new_args, num_to_cutoff - 1)
+    end
+  end
+
+  defp remove_next_default(args) do
+    default =
+      Enum.find(args, fn
+        {:\\, _, _} -> true
+        _ -> false
+      end)
+
+    List.delete(args, default)
+  end
+
+  defp undefault(args) do
+    Enum.map(args, fn
+      {:\\, _, [name, _]} -> name
+      c -> c
+    end)
+  end
+
+  defp register_effect(module, name, args, impl) do
+    num_non_defaulted_args = count_non_defaulted_args(args)
+    arity = Enum.count(args)
+
+    Module.put_attribute(module, :effects, {name, num_non_defaulted_args..arity, impl})
+  end
+
+  defp count_non_defaulted_args(args) do
+    Enum.filter(args, fn
+      {:\\, _, _} -> false
+      _ -> true
+    end)
+    |> Enum.count()
+  end
+
+  defp remove_defaults(args) do
+    Enum.filter(args, fn
+      {:\\, _, _} -> false
+      _arg -> true
+    end)
   end
 
   defp extract_fun({:when, _ctx, [fun, _when_condition]}), do: fun
@@ -372,9 +442,9 @@ defmodule Efx do
   @spec already_exists?(module(), atom(), arity()) :: boolean()
   def already_exists?(module, name, arity) do
     Enum.any?(
-      Module.get_attribute(module, :effect_impls),
+      Module.get_attribute(module, :effects),
       fn {other_name, other_arity, _} ->
-        name == other_name && arity == other_arity
+        name == other_name && arity in other_arity
       end
     )
   end

@@ -58,8 +58,10 @@ defmodule EfxCase.Mock do
   def make(module) do
     effects =
       module.__effects__()
-      |> Enum.map(fn {effect, arity} ->
-        %MockedFun{name: effect, arity: arity, impl: :unmocked}
+      |> Enum.flat_map(fn {effect, arities, _} ->
+        Enum.map(arities, fn arity ->
+          %MockedFun{name: effect, arity: arity, impl: :unmocked}
+        end)
       end)
 
     %Mock{mocked_funs: effects}
@@ -69,7 +71,7 @@ defmodule EfxCase.Mock do
           {:ok, Mock.t()} | {:error, :function_not_in_mock}
   def add_fun(mock, name, arity, impl, exptected_calls \\ nil) do
     if member?(mock, name, arity) do
-      mock = delete_when_unmocked(mock, name)
+      mock = delete_when_unmocked(mock, name, arity)
 
       new_mocked_funs =
         mock.mocked_funs ++
@@ -134,12 +136,14 @@ defmodule EfxCase.Mock do
     end
   end
 
-  @spec delete_when_unmocked(Mock.t(), atom()) :: Mock.t()
-  defp delete_when_unmocked(mock, name) do
+  @spec delete_when_unmocked(Mock.t(), atom(), non_neg_integer()) :: Mock.t()
+  defp delete_when_unmocked(mock, name, arity) do
     %Mock{
       mock
       | mocked_funs:
-          Enum.reject(mock.mocked_funs, fn f -> f.name == name && f.impl == :unmocked end)
+          Enum.reject(mock.mocked_funs, fn f ->
+            f.name == name && f.impl == :unmocked && arity == f.arity
+          end)
     }
   end
 
@@ -155,7 +159,7 @@ defmodule EfxCase.Mock do
   @spec member?(Mock.t(), atom(), arity()) :: boolean()
   defp member?(mock, name, arity) do
     Enum.any?(mock.mocked_funs, fn f ->
-      f.name == name && f.arity == arity
+      f.name == name && arity == f.arity
     end)
   end
 end
