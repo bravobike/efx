@@ -1,6 +1,6 @@
 defmodule EfxCaseTest do
-  use ExUnit.Case
   use EfxCase
+  use ExUnit.Case
 
   alias EfxCase.EfxExample
 
@@ -64,7 +64,6 @@ defmodule EfxCaseTest do
     test "allows binding one effect and defaulting the other" do
       bind(EfxExample, :get, fn -> [] end)
       bind(EfxExample, :append_get, {:default, 1})
-
       assert EfxExample.get() == []
       assert EfxExample.append_get(6) == [1, 2, 3, 4, 5, 6]
     end
@@ -106,6 +105,29 @@ defmodule EfxCaseTest do
         bind(EfxExample, :get, fn -> 1 end)
         assert EfxExample.get() == 1
       end)
+    end
+  end
+
+  describe "effects with default args" do
+    test "can be called without binding as expected" do
+      assert EfxExample.with_default_args() == "Hello user 123"
+      assert EfxExample.with_default_args("Rick") == "Hello Rick"
+      assert EfxExample.with_default_args("Rick", "Bye") == "Bye Rick"
+    end
+
+    test "can be bound with exhaustive arity as expected" do
+      bind(EfxExample, :with_default_args, fn a, b -> b <> "-" <> a end)
+      assert EfxExample.with_default_args("Rick", "Bye") == "Bye-Rick"
+    end
+
+    test "can be bound in defaulted version as expected" do
+      bind(EfxExample, :with_default_args, fn -> "Bye Rick" end)
+      bind(EfxExample, :with_default_args, fn _a -> "Bye Schlick" end)
+      bind(EfxExample, :with_default_args, fn _a, _b -> "Bye Morty" end)
+
+      assert EfxExample.with_default_args() == "Bye Rick"
+      assert EfxExample.with_default_args("bla") == "Bye Schlick"
+      assert EfxExample.with_default_args("bla", "blub") == "Bye Morty"
     end
   end
 end
