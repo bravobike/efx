@@ -5,7 +5,7 @@ defmodule EfxCase.EfxCaseRescueExample do
   defeffect with_rescue() do
     raise "oh noes"
   rescue
-    error -> error.message
+    error in RuntimeError -> error.message
   end
 
   @spec with_catch() :: String.t()
