@@ -40,29 +40,23 @@ defmodule EfxCase.MockTest do
   describe "get_fun/3" do
     test "returns a function that was added" do
       {:ok, mock} = make() |> add_mock()
-      fun = Mock.get_fun(mock, :get, 0)
+      {:ok, %{impl: fun}} = Mock.get_fun(mock, :get, 0)
       assert fun.() == []
     end
 
     test "throws if no mocks where found" do
-      assert_raise(RuntimeError, fn ->
-        mock = make()
-        assert Mock.get_fun(mock, :foo, 0)
-      end)
+      mock = make()
+      assert {:error, :not_found} = Mock.get_fun(mock, :foo, 0)
     end
 
     test "throws if calls where exhausted" do
-      assert_raise(RuntimeError, fn ->
-        {:ok, mock} = make() |> add_mock(name: :get, expected_calls: 0)
-        assert Mock.get_fun(mock, :get, 0)
-      end)
+      {:ok, mock} = make() |> add_mock(name: :get, expected_calls: 0)
+      assert {:error, :exhausted} = Mock.get_fun(mock, :get, 0)
     end
 
     test "throws if function is unmocked" do
-      assert_raise(RuntimeError, fn ->
-        mock = make()
-        assert Mock.get_fun(mock, :get, 0)
-      end)
+      mock = make()
+      assert {:error, :unmocked} = Mock.get_fun(mock, :get, 0)
     end
   end
 
