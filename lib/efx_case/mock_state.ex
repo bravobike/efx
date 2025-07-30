@@ -54,7 +54,7 @@ defmodule EfxCase.MockState do
       end)
 
     if result == {:error, :function_not_in_mock} do
-      Assertions.flunk("Not matching function found for #{behaviour}: #{fun_identifier}/#{arity}")
+      Assertions.flunk("No matching function found for #{behaviour}: #{fun_identifier}/#{arity}")
     end
 
     :ok
