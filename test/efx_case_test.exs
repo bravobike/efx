@@ -53,6 +53,14 @@ defmodule EfxCaseTest do
       assert EfxExample.append_get(1) == [1]
     end
 
+    test "works as expected with captures" do
+      bind(&EfxExample.get/0, fn -> [] end, calls: 1)
+      bind(&EfxExample.append_get/1, fn arg -> [arg] end)
+
+      assert EfxExample.get() == []
+      assert EfxExample.append_get(1) == [1]
+    end
+
     test "works when one function is bound and the other isn't called" do
       bind(EfxExample, :get, fn -> [] end)
       assert EfxExample.get() == []
@@ -73,6 +81,21 @@ defmodule EfxCaseTest do
       assert EfxExample.get() == []
     end
 
+    test "works with const" do
+      bind(&EfxExample.get/0, const: [])
+      assert EfxExample.get() == []
+    end
+
+    test "works with const and calls" do
+      bind(&EfxExample.get/0, const: [], calls: 1)
+      assert EfxExample.get() == []
+    end
+
+    test "works with expected number of calls with captures" do
+      bind(&EfxExample.get/0, fn -> [] end, calls: 1)
+      assert EfxExample.get() == []
+    end
+
     test "works with expected number of calls part two" do
       bind(EfxExample, :get, fn -> [] end, calls: 2)
       assert EfxExample.get() == []
@@ -82,6 +105,13 @@ defmodule EfxCaseTest do
     test "allows binding one effect and defaulting the other" do
       bind(EfxExample, :get, fn -> [] end)
       bind(EfxExample, :append_get, {:default, 1})
+      assert EfxExample.get() == []
+      assert EfxExample.append_get(6) == [1, 2, 3, 4, 5, 6]
+    end
+
+    test "allows binding one effect and defaulting the other with capture notation" do
+      bind(&EfxExample.get/0, const: [])
+      bind(&EfxExample.append_get/1, default: true)
       assert EfxExample.get() == []
       assert EfxExample.append_get(6) == [1, 2, 3, 4, 5, 6]
     end

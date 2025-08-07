@@ -1,7 +1,7 @@
 defmodule Efx.MixProject do
   use Mix.Project
 
-  @version "0.2.11"
+  @version "1.0.0"
   @github_page "https://github.com/bravobike/efx"
 
   def project do
@@ -47,7 +47,7 @@ defmodule Efx.MixProject do
   defp docs() do
     [
       api_reference: false,
-      authors: ["Simon Härer"],
+      authors: ["Simon Härer, Norbert Melzer"],
       canonical: "http://hexdocs.pm/efx",
       main: "Efx",
       source_ref: "v#{@version}"
@@ -61,7 +61,7 @@ defmodule Efx.MixProject do
       links: %{
         "GitHub" => @github_page
       },
-      maintainers: ["Simon Härer"]
+      maintainers: ["Simon Härer, Norbert Melzer"]
     ]
   end
 end

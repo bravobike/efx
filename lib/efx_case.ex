@@ -53,7 +53,7 @@ defmodule EfxCase do
         use EfxCase
 
         test "works as expected with empty file" do
-          bind(MyModule, :read_file!, fn -> "" end)
+          bind(&MyModule.read_file!/0, fn -> "" end)
 
           # test code here
           ...
@@ -73,7 +73,7 @@ defmodule EfxCase do
   We can define a number of expected calls as follows:
 
       test "works as expected with empty file" do
-        bind(MyModule, :read_file!, fn -> "" end, calls: 1)
+        bind(&MyModule.read_file!/0, fn -> "" end, calls: 1)
 
         # test code here
         ...
@@ -88,8 +88,8 @@ defmodule EfxCase do
 
 
       test "works as expected with empty file and then some data" do
-        bind(MyModule, :read_file!, fn -> "" end, calls: 1)
-        bind(MyModule, :read_file!, fn -> "some meaningful data" end, calls: 1)
+        bind(&MyModule.read_file!/0, fn -> "" end, calls: 1)
+        bind(&MyModule.read_file!/0, fn -> "some meaningful data" end, calls: 1)
 
         # test code here
         ...
@@ -110,8 +110,8 @@ defmodule EfxCase do
       defmodule MyModuleTest do
         use EfxCase, async: false
 
-        test "async test works as expected" do
-          bind(MyModule, :read_file!, fn -> "" end)
+        test "test works as expected" do
+          bind(&MyModule.read_file!/0 "" end)
 
           # test code here
           ...
@@ -172,8 +172,8 @@ defmodule EfxCase do
         use EfxCase, async: false
 
         test "works with meaningful data" do
-          bind(MyModule, :read_file!, fn -> "some meaningful data" end)
-          bind(MyModule, :write_file!, {:default, 1})
+          bind(&MyModule.read_file!/1, fn -> "some meaningful data" end)
+          bind(&MyModule.write_file!/1, default: true)
 
           # test code here
           ...
@@ -201,8 +201,8 @@ defmodule EfxCase do
 
   require Logger
 
-  alias EfxCase.MockState
   alias EfxCase.Internal
+  alias EfxCase.MockState
 
   defmacro __using__(opts) do
     async? = Keyword.get(opts, :async, true)
@@ -223,7 +223,29 @@ defmodule EfxCase do
         on_exit(clean_up(pid))
       end
 
-      defp bind(effects_behaviour, key, fun, opts \\ []) do
+      defp bind(module_or_capture, arg_1, arg_2 \\ [], arg_3 \\ [])
+
+      defp bind(capture, opts, _, _) when is_function(capture) and is_list(opts) do
+        fun_info = Function.info(capture)
+        name = Keyword.get(fun_info, :name)
+        module = Keyword.get(fun_info, :module)
+        arity = Keyword.get(fun_info, :arity)
+
+        fun = Internal.special_fun_from_opts(opts, arity)
+
+        bind(module, name, fun, opts)
+      end
+
+      defp bind(capture, fun, opts, _) when is_function(capture) do
+        fun_info = Function.info(capture)
+        name = Keyword.get(fun_info, :name)
+        module = Keyword.get(fun_info, :module)
+
+        bind(module, name, fun, opts)
+      end
+
+      defp bind(effects_behaviour, key, fun, opts)
+           when (is_function(fun) or is_tuple(fun)) and is_atom(effects_behaviour) do
         num = Keyword.get(opts, :calls)
 
         pid =

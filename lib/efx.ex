@@ -106,16 +106,16 @@ defmodule Efx do
 
         describe "read_data/0" do
           test "works as expected with empty file" do
-            bind(MyModule, :read_file!, fn -> "" end)
-            bind(MyModule, :write_file!, fn _ -> :ok end)
+            bind(&MyModule.read_file!/0, fn -> "" end)
+            bind(&MyModule.write_file!/1, fn _ -> :ok end)
 
             # test code here
             ...
           end
 
           test "works as expected with proper contents" do
-            bind(MyModule, :read_file!, fn -> "some expected file content" end)
-            bind(MyModule, :write_file!, fn _ -> :ok end)
+            bind(&MyModule.read_file!/0, fn -> "some expected file content" end)
+            bind(&MyModule.write_file!/1, fn _ -> :ok end)
 
             # test code here
             ...

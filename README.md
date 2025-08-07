@@ -42,7 +42,7 @@ Efx follows the following principles:
 To use `Efx` in your project, add this to your dependencies in `mix.ex`:
 
 ```elixir
-{:efx, "~> 0.2.11"}
+{:efx, "~> 1.0.0"}
 ```
 
 If you want to have proper formatting of the `Efx.defeffect/2` macro, you can add
@@ -132,16 +132,16 @@ defmodule MyModuleTest do
 
   describe "read_data/0" do
     test "works as expected with empty file" do
-      bind(MyModule, :read_file!, fn -> "" end)
-      bind(MyModule, :write_file!, fn _ -> :ok end)
+      bind(&MyModule.read_file!/0, fn -> "" end)
+      bind(&MyModule.write_file!/1, fn _ -> :ok end)
 
       # test code here
       ...
     end
 
     test "works as expected with proper contents" do
-      bind(MyModule, :read_file!, fn -> "some expected file content" end)
-      bind(MyModule, :write_file!, fn _ -> :ok end)
+      bind(&MyModule.read_file!/0, fn -> "some expected file content" end)
+      bind(&MyModule.write_file!/1, fn _ -> :ok end)
 
       # test code here
       ...
