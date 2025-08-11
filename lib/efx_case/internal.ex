@@ -1,4 +1,6 @@
 defmodule EfxCase.Internal do
+  @moduledoc false
+
   alias EfxCase.MockState
 
   def verify_mocks(pid) do

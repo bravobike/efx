@@ -1,18 +1,18 @@
 defmodule EfxCase.MockState do
-  @moduledoc """
-  This module implements a global mutable state needed for mocking.
+  @moduledoc !"""
+             This module implements a global mutable state needed for mocking.
 
-  Mocking works by adding the pid of the mock-owning process to it's
-  dictionary and accessing this pid using a lookup with `ProcessTree`.
+             Mocking works by adding the pid of the mock-owning process to it's
+             dictionary and accessing this pid using a lookup with `ProcessTree`.
 
-  The pid then can be used to lookup information of the mock, e.g. which
-  function is mocked with replacement or how often a function was
-  called to verify. This module is the global lookup.
+             The pid then can be used to lookup information of the mock, e.g. which
+             function is mocked with replacement or how often a function was
+             called to verify. This module is the global lookup.
 
-  We need a global lookup in which we can manipulate data to count mock
-  invocations as well as store mocks as global when a test is flagged as
-  async.
-  """
+             We need a global lookup in which we can manipulate data to count mock
+             invocations as well as store mocks as global when a test is flagged as
+             async.
+             """
   alias EfxCase.Mock
   alias EfxCase.Mock.MockedFun
   alias ExUnit.Assertions

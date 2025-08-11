@@ -98,6 +98,22 @@ defmodule EfxCase do
   In the above example, the test only succeeds if there are 2 calls to the effect-function.
   The first call returns an empty string, while the second returns `"some meaningful data"`.
 
+  ## Returning a constant
+
+  Most of the time, we want to bind to simple functions that returns a specific value
+  constantly. As this is such a common use-case, we don't have to create a function
+  that constantly returns a value, ignoring the inputs, but have a special keyword
+  argument, as follows:
+
+      test "works as expected with empty file and then some data" do
+        bind(&MyModule.read_file!/0, const: "some meaningful data")
+
+        # test code here
+        ...
+      end
+
+  The effect will now just return `"some meaningful data"`.
+
   ## Binding globally
 
   Effect binding uses process dictionaries to find the right binding

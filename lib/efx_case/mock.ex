@@ -1,32 +1,32 @@
 defmodule EfxCase.Mock do
-  @moduledoc """
-  Internal logic of a mocked behaviour. This module is meant
-  to make handling a mock, counting the calls, finding the
-  right mocked function, calling the mocked function, etc... more
-  convenient.
+  @moduledoc !"""
+             Internal logic of a mocked behaviour. This module is meant
+             to make handling a mock, counting the calls, finding the
+             right mocked function, calling the mocked function, etc... more
+             convenient.
 
-  A mock consists of the following:
+             A mock consists of the following:
 
-  - a list of mocked functions
-  """
+             - a list of mocked functions
+             """
   use TypedStruct
   alias __MODULE__
 
   defmodule MockedFun do
-    @moduledoc """
-    Internal logic of a mocked function. 
+    @moduledoc !"""
+               Internal logic of a mocked function. 
 
-    A mocked functions consists of the following:
+               A mocked functions consists of the following:
 
-    - the name or identifier of the function
-    - the arity of the function
-    - the implementation/replacement of the function. Besides an
-      anonymous function this can be :unmocked or :default.
-      :unmocked says there is no replacement yet and error when called 
-      :default refers to the default implementation
-    - a number of expected calls
-    - a counter showing how the mocked functions has been called
-    """
+               - the name or identifier of the function
+               - the arity of the function
+               - the implementation/replacement of the function. Besides an
+                 anonymous function this can be :unmocked or :default.
+                 :unmocked says there is no replacement yet and error when called 
+                 :default refers to the default implementation
+               - a number of expected calls
+               - a counter showing how the mocked functions has been called
+               """
     use TypedStruct
 
     typedstruct do

@@ -1,4 +1,6 @@
 defmodule EfxCase.FunUtil do
+  @moduledoc false
+
   for arity <- 0..20 do
     args = for i <- 0..arity, i != 0, do: Macro.var(:"_arg#{i}", nil)
     def unquote(:"constantly_#{arity}")(ret), do: fn unquote_splicing(args) -> ret end

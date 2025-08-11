@@ -439,6 +439,7 @@ defmodule Efx do
     Enum.count(args)
   end
 
+  @doc false
   @spec already_exists?(module(), atom(), arity()) :: boolean()
   def already_exists?(module, name, arity) do
     Enum.any?(
