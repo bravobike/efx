@@ -182,6 +182,15 @@ defmodule Efx do
   `delegateeffect` follows the same syntax as `Kernel.defdelegate/2`.
   Functions defined using `defdelegate` are bindable in tests like they were created using `defeffect`.
 
+
+
+  ### Custom Test Environments
+
+  Per default, binding only works in mix-env `:test`. In other environments, effect functions are stripped to their default function body to not cause runtime-overhead. If you need bindings in another test environment, you can add the following to your config:
+
+      config :efx, :test_envs, [:test, :other_test_env]
+
+  Note that you then need to explicitly list `:test` as well.
   """
 
   @envs Application.compile_env(:efx, :test_envs, [:test])
