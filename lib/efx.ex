@@ -184,6 +184,8 @@ defmodule Efx do
 
   """
 
+  @envs Application.compile_env(:efx, :test_envs, [:test])
+
   defmacro __using__(opts) do
     caller = __CALLER__.module
     config_root = Keyword.get(opts, :config_root, :effects)
@@ -454,7 +456,7 @@ defmodule Efx do
   defp ensure_list(nil), do: []
   defp ensure_list(list), do: list
 
-  defp in_test?() do
-    Code.ensure_loaded?(Mix) && Mix.env() == :test
+  def in_test?() do
+    Code.ensure_loaded?(Mix) && Mix.env() in @envs
   end
 end

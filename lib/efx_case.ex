@@ -223,6 +223,10 @@ defmodule EfxCase do
   defmacro __using__(opts) do
     async? = Keyword.get(opts, :async, true)
 
+    if not Efx.in_test?() do
+      fail_test_env()
+    end
+
     quote do
       use ExUnit.Case, async: unquote(async?)
 
@@ -325,5 +329,26 @@ defmodule EfxCase do
     Enum.each(stubs, fn {k, v} ->
       bind(:omnipresent, effects_behaviour, k, v)
     end)
+  end
+
+  defp fail_test_env() do
+    envs = Application.get_env(:efx, :test_envs, [:test])
+
+    raise """
+    It seems like EfxCase is used in a non-test environment.
+
+    The current env is #{current_env()} but the configured test envs are #{inspect(envs)}.
+
+    To add #{current_env()} to efx test envs, adapt your config as follows:
+
+        config :efx, :test_envs, #{inspect(envs ++ [current_env()])}
+
+    """
+  end
+
+  defp current_env() do
+    if Code.ensure_loaded?(Mix) do
+      Mix.env()
+    end
   end
 end

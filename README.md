@@ -42,7 +42,7 @@ Efx follows the following principles:
 To use `Efx` in your project, add this to your dependencies in `mix.ex`:
 
 ```elixir
-{:efx, "~> 1.0.0"}
+{:efx, "~> 1.0.1"}
 ```
 
 If you want to have proper formatting of the `Efx.defeffect/2` macro, you can add
@@ -215,6 +215,16 @@ delegateeffect to_atom(str), to: String
 
 `delegateeffect` follows the same syntax as `Kernel.defdelegate/2`.
 Functions defined using `defdelegate` are bindable in tests like they were created using `defeffect`.
+
+### Custom Test Environments
+
+Per default, binding only works in mix-env `:test`. In other environments, effect functions are stripped to their default function body to not cause runtime-overhead. If you need bindings in another test environment, you can add the following to your config:
+
+```
+config :efx, :test_envs, [:test, :other_test_env]
+```
+
+Note that you then need to explicitly list `:test` as well.
 
 
 ## OTP Version 25 required
